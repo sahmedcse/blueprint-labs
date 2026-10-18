@@ -29,3 +29,11 @@ def test_message_mode(root, tmp_path):
     bad.write_text("wip\n")
     assert root.run("commit-check.sh", "--message", str(good)).returncode == 0
     assert root.run("commit-check.sh", "--message", str(bad), check=False).returncode == 1
+
+
+def test_nested_lockfiles_are_exempt(root):
+    commit(root, "base.txt", 1, "chore: base")
+    base = root.git("rev-parse", "HEAD").strip()
+    (root.path / "sk").mkdir()
+    commit(root, "sk/uv.lock", 900, "build: lock")
+    assert root.run("commit-check.sh", str(root.path), base).returncode == 0

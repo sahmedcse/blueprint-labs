@@ -23,7 +23,8 @@ EXEMPT = ["pnpm-lock.yaml", "package-lock.json", "yarn.lock", "go.sum", "uv.lock
 
 
 def exempt(path):
-    return any(fnmatch.fnmatch(path, pat) for pat in EXEMPT)
+    name = os.path.basename(path)
+    return any(fnmatch.fnmatch(path, pat) or fnmatch.fnmatch(name, pat) for pat in EXEMPT)
 
 
 def check_subject(subject):
