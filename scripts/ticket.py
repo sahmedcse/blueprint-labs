@@ -8,6 +8,8 @@ Called through scripts/ticket.sh.
     ticket.sh validate
     ticket.sh move T-0001 <status> --why "<reason>" [--pr URL] [--branch B]
     ticket.sh ready-set [--request REQ] [--json]   tickets that are ready with every dependency done
+    ticket.sh breakdown render <REQ>   .runs/<REQ>/breakdown.json → artifacts/product/breakdown.html
+    ticket.sh breakdown import <REQ>   create the approved breakdown's tickets in one commit
 
 Moves follow MOVES below. Each move logs to the ticket, the journal and one commit. When a ticket
 reaches done, backlog tickets whose dependencies are now all done are promoted to ready in the
@@ -16,6 +18,7 @@ same commit.
 Exit codes: 0 ok, 1 refused (an illegal move or an invalid ticket set), 2 bad arguments.
 """
 import argparse
+import html
 import json
 import os
 import re
@@ -281,7 +284,135 @@ def cmd_ready_set(a):
             print(f"{t['id']}\t{t['repo'] or '-'}\t{t['owner_agent']}\t{t['title']}")
 
 
-COMMANDS = {"move": cmd_move, "ready-set": cmd_ready_set, "new": cmd_new, "list": cmd_list, "show": cmd_show, "validate": cmd_validate}
+# ---- the PM's breakdown: drafted as JSON, reviewed as a page, imported once approved -------------
+
+def breakdown_paths(req):
+    run = os.path.join(ROOT, ".runs", req)
+    return os.path.join(run, "breakdown.json"), os.path.join(run, "artifacts", "product", "breakdown.html")
+
+
+def load_breakdown(req):
+    src, _ = breakdown_paths(req)
+    try:
+        b = json.load(open(src, encoding="utf-8"))
+    except FileNotFoundError:
+        die(f"no breakdown at {os.path.relpath(src, ROOT)}")
+    except ValueError as e:
+        die(f"breakdown.json is not valid JSON: {e}", 1)
+    errs, repos = [], repo_names()
+    epics = {e.get("key") for e in b.get("epics", [])}
+    refs = [t.get("ref") for t in b.get("tickets", [])]
+    if not refs:
+        errs.append("no tickets")
+    if len(refs) != len(set(refs)):
+        errs.append("ticket refs must be unique")
+    for t in b.get("tickets", []):
+        r = t.get("ref")
+        if not t.get("title") or not t.get("owner_agent"):
+            errs.append(f"{r}: title and owner_agent are required")
+        if t.get("epic") not in epics:
+            errs.append(f"{r}: unknown epic {t.get('epic')!r}")
+        if t.get("type", "feature") not in TYPES or t.get("estimate", "M") not in ESTIMATES:
+            errs.append(f"{r}: bad type or estimate")
+        if repos and t.get("repo") not in repos and t.get("type") not in ("design", "spike"):
+            errs.append(f"{r}: repo {t.get('repo')!r} is not in repos.json")
+        if not t.get("acceptance"):
+            errs.append(f"{r}: needs acceptance criteria")
+        for d in t.get("depends_on", []):
+            if d not in refs:
+                errs.append(f"{r}: depends on unknown ref {d!r}")
+    if errs:
+        die("breakdown invalid: " + "; ".join(errs), 1)
+    return b
+
+
+def render_breakdown(b):
+    e = html.escape
+    tickets = b["tickets"]
+    lines = ["graph LR"]
+    for t in tickets:
+        lines.append(f'  {t["ref"]}["{t["title"].replace(chr(34), "")}"]')
+        lines += [f"  {d} --> {t['ref']}" for d in t.get("depends_on", [])]
+    sections = []
+    for ep in b["epics"]:
+        cards = "".join(
+            f'<div class="card"><div class="kicker">{e(t["ref"])} · {e(t.get("estimate", "M"))} · {e(t.get("type", "feature"))}</div>'
+            f'<h3>{e(t["title"])}</h3><div><span class="tag">{e(t.get("repo") or "—")}</span>'
+            f'<span class="tag">{e(t["owner_agent"])}</span></div>'
+            f'<ul>{"".join(f"<li>{e(x)}</li>" for x in t["acceptance"])}</ul>'
+            + (f'<div class="muted">after {e(", ".join(t["depends_on"]))}</div>' if t.get("depends_on") else "")
+            + "</div>" for t in tickets if t.get("epic") == ep["key"])
+        sections.append(f'<h2>{e(ep["title"])}</h2><p class="muted">{e(ep.get("goal", ""))}</p><div class="grid">{cards}</div>')
+    big = [t["ref"] for t in tickets if t.get("estimate") == "L"]
+    unsure = "".join(f"<li>{e(q)}</li>" for q in b.get("open_questions", []))
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ticket breakdown</title><link rel="stylesheet" href="/_review/templates/base.css"></head>
+<body><div class="page">
+<div class="kicker">product · {e(b["req"])} · owner product-manager</div>
+<h1>Ticket breakdown</h1>
+<p class="lede">{e(b.get("summary", ""))}</p>
+<div class="decision"><b>Decision to approve</b>{len(tickets)} tickets in {len(b["epics"])} epics. Approving creates them; tickets with no dependencies start as ready.</div>
+{"<p class=warn>Large tickets: " + e(", ".join(big)) + ". Consider splitting them.</p>" if big else ""}
+<div class="diagram"><pre class="mermaid">
+{e(chr(10).join(lines))}
+</pre></div>
+{"".join(sections)}
+{f'<div class="unsure"><b>Unsure about</b><ul>{unsure}</ul></div>' if unsure else ""}
+</div>
+<script src="/_review/vendor/mermaid.min.js"></script>
+<script>mermaid.initialize({{startOnLoad:true,theme:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'neutral'}});</script>
+</body></html>
+"""
+
+
+def cmd_breakdown(a):
+    b = load_breakdown(a.req)
+    if b.get("req") != a.req:
+        die(f"breakdown.json says req {b.get('req')!r}, expected {a.req}", 1)
+    src, page = breakdown_paths(a.req)
+    if a.action == "render":
+        os.makedirs(os.path.dirname(page), exist_ok=True)
+        open(page, "w", encoding="utf-8").write(render_breakdown(b))
+        print(os.path.relpath(page, ROOT))
+        return
+    tickets = load_all()
+    if any(t["request"] == a.req for t in tickets.values()):
+        die(f"{a.req} already has tickets; add more with `ticket.sh new`", 1)
+    ref_to_id, created = {}, []
+    for t in b["tickets"]:  # refs may point forward, so allocate ids first
+        ref_to_id[t["ref"]] = f"T-{int(next_id(tickets)[2:]) + len(ref_to_id):04d}"
+    epic_titles = {ep["key"]: ep["title"] for ep in b["epics"]}
+    for t in b["tickets"]:
+        deps = [ref_to_id[d] for d in t.get("depends_on", [])]
+        c = create(tickets, request=a.req, title=t["title"], repo=t.get("repo"), owner=t["owner_agent"],
+                   type_=t.get("type", "feature"), estimate=t.get("estimate", "M"),
+                   epic=slugify(epic_titles[t["epic"]], 30), depends=deps,
+                   status="backlog" if deps else "ready", story=t.get("story", ""),
+                   acceptance=t["acceptance"], artifacts=t.get("artifacts", []),
+                   note="created from approved breakdown")
+        assert c["id"] == ref_to_id[t["ref"]]
+        created.append(c)
+    errs = problems(tickets)
+    if errs:
+        die("; ".join(errs), 1)
+    os.makedirs(TICKETS, exist_ok=True)
+    for c in created:
+        write(c)
+    kept = os.path.join(ROOT, "requests", a.req, "breakdown.json")
+    os.makedirs(os.path.dirname(kept), exist_ok=True)
+    with open(kept, "w", encoding="utf-8") as f:
+        json.dump({**b, "ids": ref_to_id}, f, indent=2)
+    ready = sum(c["status"] == "ready" for c in created)
+    j = trail.journal(ROOT, "ticket", a.req, f"created {len(created)} tickets from the approved breakdown "
+                      f"({created[0]['id']}–{created[-1]['id']}, {ready} ready)")
+    trail.commit(ROOT, [c["_path"] for c in created] + [kept, j],
+                 f"ticket({a.req}): create {len(created)} tickets from approved breakdown")
+    for c in created:
+        print(f"{c['id']}\t{c['status']}\t{c['title']}")
+
+
+COMMANDS = {"breakdown": cmd_breakdown, "move": cmd_move, "ready-set": cmd_ready_set, "new": cmd_new, "list": cmd_list, "show": cmd_show, "validate": cmd_validate}
 
 
 def parser():
@@ -303,6 +434,8 @@ def parser():
     m.add_argument("--why", required=True); m.add_argument("--pr"); m.add_argument("--branch")
     r = sub.add_parser("ready-set")
     r.add_argument("--request"); r.add_argument("--json", action="store_true")
+    b = sub.add_parser("breakdown")
+    b.add_argument("action", choices=["render", "import"]); b.add_argument("req")
     return ap, sub
 
 
