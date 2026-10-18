@@ -6,6 +6,12 @@ Called through scripts/ticket.sh.
     ticket.sh list [--status S] [--request REQ] [--repo R] [--json]
     ticket.sh show T-0001
     ticket.sh validate
+    ticket.sh move T-0001 <status> --why "<reason>" [--pr URL] [--branch B]
+    ticket.sh ready-set [--request REQ] [--json]   tickets that are ready with every dependency done
+
+Moves follow MOVES below. Each move logs to the ticket, the journal and one commit. When a ticket
+reaches done, backlog tickets whose dependencies are now all done are promoted to ready in the
+same commit.
 
 Exit codes: 0 ok, 1 refused (an illegal move or an invalid ticket set), 2 bad arguments.
 """
@@ -26,6 +32,15 @@ ESTIMATES = ["S", "M", "L"]
 FIELDS = ["id", "title", "request", "epic", "type", "repo", "owner_agent", "depends_on", "estimate",
           "status", "branch", "pr", "artifacts", "created", "updated"]
 LISTS = {"depends_on", "artifacts"}
+MOVES = {
+    "backlog": {"ready", "blocked", "dropped"},
+    "ready": {"in_progress", "backlog", "blocked", "dropped"},
+    "in_progress": {"in_review", "ready", "blocked"},
+    "in_review": {"done", "in_progress", "blocked"},
+    "blocked": {"backlog", "ready", "in_progress", "dropped"},
+    "done": set(),
+    "dropped": set(),
+}
 ID_RE = re.compile(r"^T-\d{4}$")
 
 
@@ -209,7 +224,64 @@ def cmd_validate(a):
     sys.exit(1 if errs else 0)
 
 
-COMMANDS = {"new": cmd_new, "list": cmd_list, "show": cmd_show, "validate": cmd_validate}
+def log(t, line):
+    t["_body"] = t["_body"].rstrip("\n") + f"\n- {trail.now()} · {line}\n"
+    t["updated"] = trail.now()[:10]
+
+
+def deps_done(tickets, t):
+    return all(tickets.get(d, {}).get("status") == "done" for d in t.get("depends_on") or [])
+
+
+def cmd_move(a):
+    tickets = load_all()
+    t = get(tickets, a.id)
+    old, new = t["status"], a.status
+    if new not in MOVES[old]:
+        allowed = ", ".join(sorted(MOVES[old])) or "none (final)"
+        die(f"{a.id} cannot move {old} → {new}. From {old} it can go to: {allowed}", 1)
+    if new == "in_progress" and not deps_done(tickets, t):
+        waiting = [d for d in t["depends_on"] if tickets[d]["status"] != "done"]
+        die(f"{a.id} is waiting on {', '.join(waiting)}", 1)
+    if new == "in_review" and not (a.pr or t.get("pr")):
+        die(f"{a.id} needs --pr to go to in_review", 1)
+    if not a.why.strip():
+        die("--why is required: it becomes the trail")
+    if a.pr:
+        t["pr"] = a.pr
+    if a.branch:
+        t["branch"] = a.branch
+    t["status"] = new
+    log(t, f"{old} → {new}: {a.why}" + (f" ({a.pr})" if a.pr else ""))
+    changed = [t]
+    if new == "done":
+        for o in tickets.values():
+            if o["status"] == "backlog" and a.id in (o.get("depends_on") or []) and deps_done(tickets, o):
+                o["status"] = "ready"
+                log(o, f"backlog → ready: all dependencies done (last was {a.id})")
+                changed.append(o)
+    for c in changed:
+        write(c)
+    promoted = [c["id"] for c in changed[1:]]
+    text = f"{old} → {new}: {a.why}" + (f"; promoted {', '.join(promoted)} to ready" if promoted else "")
+    j = trail.journal(ROOT, "ticket", a.id, text, link=a.pr or t.get("pr"))
+    msg = f"ticket({a.id}): {old} → {new} — {a.why}"
+    trail.commit(ROOT, [c["_path"] for c in changed] + [j], msg[:100])
+    print(f"{a.id} {old} → {new}" + (f" (promoted {', '.join(promoted)})" if promoted else ""))
+
+
+def cmd_ready_set(a):
+    tickets = load_all()
+    rows = [t for t in tickets.values() if t["status"] == "ready" and deps_done(tickets, t)
+            and (not a.request or t["request"] == a.request)]
+    if a.json:
+        print(json.dumps([public(t) for t in rows], indent=2))
+    else:
+        for t in rows:
+            print(f"{t['id']}\t{t['repo'] or '-'}\t{t['owner_agent']}\t{t['title']}")
+
+
+COMMANDS = {"move": cmd_move, "ready-set": cmd_ready_set, "new": cmd_new, "list": cmd_list, "show": cmd_show, "validate": cmd_validate}
 
 
 def parser():
@@ -226,6 +298,11 @@ def parser():
     ls.add_argument("--json", action="store_true")
     sub.add_parser("show").add_argument("id")
     sub.add_parser("validate")
+    m = sub.add_parser("move")
+    m.add_argument("id"); m.add_argument("status", choices=STATUSES)
+    m.add_argument("--why", required=True); m.add_argument("--pr"); m.add_argument("--branch")
+    r = sub.add_parser("ready-set")
+    r.add_argument("--request"); r.add_argument("--json", action="store_true")
     return ap, sub
 
 
