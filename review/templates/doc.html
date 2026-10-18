@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title><link rel="stylesheet" href="/_review/templates/base.css"></head>
+<body><div class="page">
+<!-- Short decision documents: an ADR, one PRD slice, or a migration plan. One decision per
+     page. If you need more than six <h2> sections, split it into more artifacts. -->
+<div class="kicker">{{LOOP}} · {{REQ}} · owner {{OWNER}}</div>
+<h1>{{TITLE}}</h1>
+<p class="lede">{{CONTEXT_IN_TWO_SENTENCES}}</p>
+<div class="decision"><b>Decision to approve</b>{{THE_DECISION}}</div>
+<h2>Options considered</h2>
+<table><tr><th>Option</th><th>For</th><th>Against</th></tr>{{ROWS}}</table>
+<h2>Consequences</h2>
+<ul>{{WHAT_GETS_EASIER_AND_HARDER}}</ul>
+<div class="unsure"><b>Unsure about</b><ul>{{OPEN_QUESTIONS_OR_REMOVE_THIS_BLOCK}}</ul></div>
+</div></body></html>
