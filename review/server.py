@@ -23,8 +23,11 @@ Guards, because any page the user has open can reach a local server:
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
+import threading
+import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote, urlparse
 
@@ -47,6 +50,19 @@ def make_handler(root, req):
     notes_dir = os.path.join(run_dir, "notes")
     status_file = os.path.join(root, "requests", req, "status.json")
     reviews_file = os.path.join(run_dir, "reviews.json")
+    request_sh = os.path.join(root, "scripts", "request.sh")
+    rebuilt = {"at": 0.0}
+    rebuild_lock = threading.Lock()
+
+    def rebuild_status():
+        # Keep the hub live without the master: rebuild status.json at most every 2s (no gh calls).
+        if not os.path.exists(request_sh) or not os.path.isdir(os.path.dirname(status_file)):
+            return
+        with rebuild_lock:
+            if time.time() - rebuilt["at"] < 2:
+                return
+            subprocess.run([request_sh, "status", req, "--no-gh"], capture_output=True, timeout=20)
+            rebuilt["at"] = time.time()
 
     class Handler(SimpleHTTPRequestHandler):
         def log_message(self, fmt, *args):  # keep background task output quiet
@@ -94,6 +110,7 @@ def make_handler(root, req):
             if p == "/__reviews":
                 return self._json_file(reviews_file, {"req": req, "artifacts": {}})
             if p == "/__status":
+                rebuild_status()
                 return self._json_file(status_file, {"req": req})
             return super().do_GET()
 
