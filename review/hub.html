@@ -192,6 +192,7 @@ a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
     Array.prototype.forEach.call(document.querySelectorAll('nav button'), function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
     Array.prototype.forEach.call(document.querySelectorAll('main section'), function (s) { s.classList.toggle('on', s.id === tab); });
     if (tab === 'board') board();
+    try { localStorage.setItem('bpl:hubtab', tab); } catch (e) { /* storage blocked */ }
   }
 
   $('tabs').addEventListener('click', function (e) {
