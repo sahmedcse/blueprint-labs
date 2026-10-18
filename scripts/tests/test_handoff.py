@@ -43,3 +43,21 @@ def test_missing_spec_fails_and_missing_quality_is_advisory(root):
     assert m["verdict"] == "approved" and m["findings"][0]["problem"] == "quality review missing or unparseable"
 
 
+def test_brief_carries_failures_and_findings(root):
+    setup(root, makefile="gate:\n\t@echo boom-marker; exit 1\n")
+    root.run("gate.sh", REQ, "T-0001", "1", check=False)
+    write(root, "review.iter1.json", {"findings": [{"id": "R1.1", "severity": "blocking", "file": "a.go", "line": 3,
+                                                   "problem": "no 409", "fix": "return 409"}]})
+    b = root.run("brief.sh", REQ, "T-0001", "2").stdout
+    assert "You are the backend-developer. Implement ticket T-0001 (thing), iteration 2 of 3." in b
+    assert "boom-marker" in b and "[R1.1] a.go:3: no 409 Fix: return 409" in b
+    assert "principles/learnings/backend-developer.md" in b and "## Acceptance criteria" in b
+
+
+def test_pr_body(root):
+    wt = setup(root)
+    root.run("gate.sh", REQ, "T-0001", "1")
+    write(root, "review.iter1.json", {"findings": [{"severity": "advisory", "source": "quality", "problem": "rename x"}]})
+    body = root.run("pr-body.sh", REQ, "T-0001").stdout
+    assert body.startswith("**T-0001** · thing")
+    assert "Gate passed at iteration 1" in body and "rename x" in body and "build: add gate target" in body

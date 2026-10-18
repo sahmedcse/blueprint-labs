@@ -45,6 +45,53 @@ def get_ticket(tid):
     return t
 
 
+# ---- brief -------------------------------------------------------------------------------------
+
+def brief(req, tid, it):
+    t, s = get_ticket(tid), repos.load_state(ROOT, req, tid)
+    if not s:
+        sys.exit(f"{tid} has no worktree; run worktree.sh create first")
+    owner = t["owner_agent"]
+    plan = load(os.path.join(ROOT, ".runs", req, "plan.json")) or {}
+    contracts = sorted(f for f in os.listdir(os.path.join(ROOT, "contracts")) if f.endswith((".yaml", ".yml", ".json"))) \
+        if os.path.isdir(os.path.join(ROOT, "contracts")) else []
+    out = [f"You are the {owner}. Implement ticket {tid} ({t['title']}), iteration {it} of {s['max_iterations']}.", "",
+           "## Read first",
+           "- principles/PRINCIPLES.md and principles/DEVELOPER.md (binding)",
+           f"- principles/learnings/{owner}.md",
+           *[f"- conventions/{c}" for c in CONVENTIONS.get(s["kind"], [])],
+           f"- the repo's CLAUDE.md in your worktree", "",
+           "## Where you work",
+           f"- worktree: {s['worktree']}",
+           f"- branch: {s['branch']} (based on {s['base']})",
+           f"- repo: {s['repo']} (kind {s['kind']})", "",
+           "## The ticket (your spec)", "", open(t["_path"], encoding="utf-8").read().strip(), ""]
+    if plan.get("tickets", {}).get(tid):
+        out += ["## Architect's notes", "", plan["tickets"][tid], ""]
+    if contracts:
+        out += ["## Contracts (build against these exactly)", *[f"- contracts/{c}" for c in contracts], ""]
+    if t.get("artifacts"):
+        out += ["## Approved designs (binding)",
+                *[f"- requests/{req}/artifacts/{k}.html" for k in t["artifacts"]], ""]
+    if it > 1:
+        prev = it - 1
+        gate = load(os.path.join(tdir(req, tid), f"gate.iter{prev}.json"))
+        if gate and gate["status"] == "fail":
+            log = open(os.path.join(ROOT, gate["log"]), encoding="utf-8").read().splitlines()[-60:]
+            out += [f"## The gate failed last iteration at `{gate['first_failed_step']}`. Log tail:", "```",
+                    *log, "```", ""]
+        review = load(os.path.join(tdir(req, tid), f"review.iter{prev}.json"))
+        if review:
+            blocking = [f for f in review["findings"] if f["severity"] == "blocking"]
+            if blocking:
+                out += ["## Blocking review findings to fix (verbatim)",
+                        *[f"- [{f['id']}] {f.get('file', '')}:{f.get('line', '')}: {f['problem']} Fix: "
+                          f"{f.get('fix') or f.get('suggestion', '')}" for f in blocking], ""]
+        out += ["Fix only what is listed above, in new `fix:` commits. Don't rewrite history.", ""]
+    out += ["Return the JSON shape from principles/DEVELOPER.md."]
+    print("\n".join(out))
+
+
 # ---- merge-review ------------------------------------------------------------------------------
 
 def merge_review(req, tid, it):
@@ -83,9 +130,43 @@ def merge_review(req, tid, it):
     return 0
 
 
+# ---- pr-body -----------------------------------------------------------------------------------
+
+def pr_body(req, tid):
+    t, s = get_ticket(tid), repos.load_state(ROOT, req, tid)
+    body = open(t["_path"], encoding="utf-8").read().split("---", 2)[2]
+    section = lambda name: body.split(f"## {name}", 1)[1].split("\n## ", 1)[0].strip() if f"## {name}" in body else ""
+    gates = sorted((s or {}).get("gates", {}).items(), key=lambda kv: int(kv[0]))
+    last = gates[-1] if gates else None
+    review = load(os.path.join(tdir(req, tid), f"review.iter{last[0]}.json")) if last else None
+    commits = repos.git(s["worktree"], "log", "--reverse", "--format=- %h %s", f"{s['base']}..HEAD").stdout.strip() if s else ""
+    out = [f"**{tid}** · {t['title']} · request `{req}`", "", "## Story", "", section("Story"), "",
+           "## Acceptance criteria", "", section("Acceptance criteria"), ""]
+    if t.get("artifacts"):
+        out += ["## Approved designs", "", *[f"- `requests/{req}/artifacts/{k}.html` in the control repo"
+                                              for k in t["artifacts"]], ""]
+    if t.get("depends_on"):
+        out += [f"Depends on: {', '.join(t['depends_on'])}. Merge those first.", ""]
+    out += ["## Verification", ""]
+    if last:
+        out.append(f"Gate passed at iteration {last[0]} (`.runs/{req}/tickets/{tid}/gate.iter{last[0]}.json`).")
+    adv = [f for f in (review or {}).get("findings", []) if f["severity"] == "advisory"]
+    if adv:
+        out += ["", "### Advisory review findings", *[f"- ({f['source']}) {f.get('file', '')} {f['problem']}" for f in adv]]
+    out += ["", "## Commits", "", commits or "(none)", "",
+            "Merging is a human decision. Agents can't merge.", "",
+            "🤖 Generated with [Claude Code](https://claude.com/claude-code)"]
+    print("\n".join(out))
+    return 0
+
+
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if a[:1] == ["merge-review"] and len(a) == 4:
+    if a[:1] == ["brief"] and len(a) == 4:
+        brief(a[1], a[2], int(a[3]))
+    elif a[:1] == ["merge-review"] and len(a) == 4:
         sys.exit(merge_review(a[1], a[2], int(a[3])))
+    elif a[:1] == ["pr-body"] and len(a) == 3:
+        sys.exit(pr_body(a[1], a[2]))
     else:
         sys.exit("usage: brief.sh <REQ> <T> <N> | merge-review.sh <REQ> <T> <N> | pr-body.sh <REQ> <T>")
