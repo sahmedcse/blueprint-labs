@@ -23,7 +23,8 @@ EXEMPT = ["pnpm-lock.yaml", "package-lock.json", "yarn.lock", "go.sum", "uv.lock
 
 
 def exempt(path):
-    return any(fnmatch.fnmatch(path, pat) for pat in EXEMPT)
+    name = os.path.basename(path)
+    return any(fnmatch.fnmatch(path, pat) or fnmatch.fnmatch(name, pat) for pat in EXEMPT)
 
 
 def check_subject(subject):
@@ -33,7 +34,7 @@ def check_subject(subject):
 
 
 def check_range(repo, base):
-    revs = subprocess.run(["git", "-C", repo, "rev-list", "--reverse", f"{base}..HEAD"],
+    revs = subprocess.run(["git", "-C", repo, "rev-list", "--reverse", "--no-merges", f"{base}..HEAD"],
                           capture_output=True, text=True)
     if revs.returncode:
         print(f"commit-check: bad range {base}..HEAD: {revs.stderr.strip()}", file=sys.stderr)

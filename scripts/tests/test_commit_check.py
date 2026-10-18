@@ -29,3 +29,23 @@ def test_message_mode(root, tmp_path):
     bad.write_text("wip\n")
     assert root.run("commit-check.sh", "--message", str(good)).returncode == 0
     assert root.run("commit-check.sh", "--message", str(bad), check=False).returncode == 1
+
+
+def test_nested_lockfiles_are_exempt(root):
+    commit(root, "base.txt", 1, "chore: base")
+    base = root.git("rev-parse", "HEAD").strip()
+    (root.path / "sk").mkdir()
+    commit(root, "sk/uv.lock", 900, "build: lock")
+    assert root.run("commit-check.sh", str(root.path), base).returncode == 0
+
+
+def test_merge_commits_are_skipped(root):
+    commit(root, "base.txt", 1, "chore: base")
+    base = root.git("rev-parse", "HEAD").strip()
+    root.git("checkout", "-q", "-b", "side")
+    commit(root, "big.txt", 900, "feat: big on a side branch")
+    root.git("checkout", "-q", "main")
+    commit(root, "a.txt", 3, "feat: small")
+    root.git("-c", "user.email=t@e", "-c", "user.name=t", "merge", "-q", "--no-ff", "-m", "Merge side", "side")
+    r = root.run("commit-check.sh", str(root.path), "HEAD~1", check=False)
+    assert "Merge side" not in r.stdout

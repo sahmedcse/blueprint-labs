@@ -1,7 +1,7 @@
 /* Annotation layer for blueprint-labs review pages.
  *
  * `review.sh register` injects this into an artifact with window.BPL = {req, artifact, rev,
- * title, owner, round}. Ported from Profitify's design-gate layer.
+ * title, owner, round}.
  *
  * Toggle "Annotate" and click anything to pin a numbered note. Notes persist in localStorage per
  * artifact and revision, and autosave to the review server. "Send notes: revise" goes to the
