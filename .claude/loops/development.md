@@ -4,7 +4,7 @@
 needed) security-reviewer review it. **Goal:** one small PR per ticket, gated by scripts, with
 the ticket's status tracking it the whole way.
 
-Ported from Profitify's `/feature` steps 5–9, but per **ticket** instead of per repo.
+The loop runs per **ticket**, not per repo.
 Shorthand: `$T` = ticket id, `$WT` = `.worktrees/<REQ>/$T`.
 
 ## 1. Pick the next wave

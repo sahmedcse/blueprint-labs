@@ -3,7 +3,7 @@ the model), and exit 0 allows it.
 
 1. Product repos' main checkouts (from repos.json) are read-only. They may hold the user's
    uncommitted work. Agents write in .worktrees/ instead. Edit/Write deny rules can't see shell
-   redirects, so Bash commands are checked too (the same patterns as Profitify's guard).
+   redirects, so Bash commands are checked too.
 2. History is never rewritten: --amend, --no-verify and force pushes are blocked in any form
    (including `git -C <path> ...`, which the settings deny rules can't match).
 3. The trail is written by scripts only: tickets/, decisions/journal.md and requests/*/status.json
