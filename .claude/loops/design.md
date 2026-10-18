@@ -4,7 +4,7 @@
 builds it.
 
 1. `scripts/request.sh status <REQ> --phase design --loop design=running`
-2. Launch `ux-designer` with the REQ, the approved PRD pages (`requests/<REQ>/artifacts/product/`)
+2. Launch `ux-designer` with the REQ, the approved overview and PRD pages (`requests/<REQ>/artifacts/product/`)
    and `.runs/<REQ>/breakdown.json`.
 3. If `.runs/<REQ>/design.json` has `"ui_required": false`, set `--loop design=skipped` and journal
    nothing more. Otherwise register each `design/<screen>` (and `design/flow` if present), then set
