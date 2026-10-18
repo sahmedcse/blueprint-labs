@@ -120,7 +120,7 @@
     '<div class="bpl-body">' +
     '<p class="bpl-hint">Turn on <b>Annotate</b>, click anything on the page and type a note ' +
     '(<b>Esc</b> stops annotating). ' +
-    (SERVED ? 'Notes save automatically. Click <b>Send notes</b> to have the designer revise, or <b>' + ('Approve') + '</b> ' +
+    (SERVED ? 'Notes save automatically. Click <b>Send notes</b> to have <b>' + (CFG.owner || 'the owner') + '</b> revise, or <b>Approve</b> ' +
       'to move on. Claude picks either up without you returning to the terminal.</p>'
             : 'When you are done, <b>Copy notes</b> and paste them into the terminal.</p>') +
     '<div id="bpl-list"></div>' +
