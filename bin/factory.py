@@ -16,12 +16,14 @@
 publishes.
 """
 import argparse
+import datetime
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(HERE, "scripts", "lib"))
@@ -166,6 +168,110 @@ def add_repo(a):
     print(f"product repo  {dst}  ({a.kind}{', ' + remote if remote else ', local only'})")
 
 
+# ---- learnings: update-factory and sync-learnings ----------------------------------------------
+
+def bullets(text):
+    """Learning bullets: '- lesson' plus its indented 'source:' line, keyed by the lesson text."""
+    out, lines, i = {}, text.splitlines(keepends=True), 0
+    while i < len(lines):
+        if lines[i].startswith("- "):
+            j = i + 1
+            while j < len(lines) and lines[j].startswith("  "):
+                j += 1
+            out[lines[i][2:].strip()] = "".join(lines[i:j])
+            i = j
+        else:
+            i += 1
+    return out
+
+
+def merge_learnings(ours_dir, theirs_dir, strip=None):
+    """Append bullets from theirs that ours lacks. Returns {file: added_count}."""
+    added = {}
+    if not os.path.isdir(theirs_dir):
+        return added
+    os.makedirs(ours_dir, exist_ok=True)
+    for name in sorted(os.listdir(theirs_dir)):
+        if not name.endswith(".md"):
+            continue
+        theirs = open(os.path.join(theirs_dir, name), encoding="utf-8").read()
+        ours_path = os.path.join(ours_dir, name)
+        ours = open(ours_path, encoding="utf-8").read() if os.path.exists(ours_path) else theirs.split("\n- ", 1)[0]
+        have = bullets(ours)
+        new = [b for k, b in bullets(theirs).items() if k not in have]
+        if strip:
+            new = [re.sub(rf"\b{re.escape(strip)}\b", "<project>", b) for b in new]
+        if new:
+            open(ours_path, "w", encoding="utf-8").write(ours.rstrip("\n") + "\n" + "".join(new))
+            added[name] = len(new)
+    return added
+
+
+def factory_info():
+    p = os.path.join(HERE, ".blueprint", "factory.json")
+    if not os.path.exists(p):
+        die("this isn't a project made by bin/new-project (no .blueprint/factory.json)")
+    info = json.load(open(p))
+    if not os.path.isdir(os.path.join(info["template"], ".git")):
+        die(f"template repo not found at {info['template']}")
+    return p, info
+
+
+def update_factory(a):
+    info_path, info = factory_info()
+    if run(["git", "-C", HERE, "status", "--porcelain"]).stdout.strip():
+        die("commit or stash your changes first")
+    with tempfile.TemporaryDirectory() as tmp:
+        sha = export_head(info["template"], tmp)
+        for area, label in FACTORY_AREAS:
+            src, dst = os.path.join(tmp, area), os.path.join(HERE, area)
+            if os.path.isdir(src):
+                shutil.rmtree(dst, ignore_errors=True)
+                shutil.copytree(src, dst)
+            elif os.path.isfile(src):
+                shutil.copyfile(src, dst)
+            if git_commit(HERE, f"chore(factory): update {label} from blueprint-labs {sha}", [area]):
+                print(f"updated {area}")
+        added = merge_learnings(os.path.join(HERE, "principles", "learnings"), os.path.join(tmp, "principles", "learnings"))
+        if git_commit(HERE, f"chore(factory): merge template learnings from blueprint-labs {sha}", ["principles/learnings"]):
+            print(f"merged learnings: {added}")
+    info["template_commit"], info["updated"] = sha, trail.now()
+    json.dump(info, open(info_path, "w"), indent=2)
+    git_commit(HERE, f"chore(factory): record blueprint-labs {sha}", [".blueprint/factory.json"])
+
+
+def sync_learnings(a):
+    _, info = factory_info()
+    tpl = info["template"]
+    project = json.load(open(os.path.join(HERE, "repos.json"))).get("project") or os.path.basename(HERE)
+    branch = f"learnings/{project}-{datetime.date.today():%Y%m%d}"
+    wt = os.path.join(tempfile.mkdtemp(), "tpl")
+    base = "main" if run(["git", "-C", tpl, "rev-parse", "--verify", "-q", "main"], check=False).returncode == 0 else "HEAD"
+    run(["git", "-C", tpl, "worktree", "add", "-q", "-b", branch, wt, base])
+    try:
+        added = merge_learnings(os.path.join(wt, "principles", "learnings"), os.path.join(HERE, "principles", "learnings"),
+                                strip=project)
+        if not added:
+            print("nothing new to share")
+            run(["git", "-C", tpl, "worktree", "remove", wt])
+            run(["git", "-C", tpl, "branch", "-D", branch])
+            return
+        for name, n in added.items():
+            git_commit(wt, f"learn({name[:-3]}): {n} lesson(s) from {project}", [f"principles/learnings/{name}"])
+        print(f"branch {branch} in {tpl}: {added}")
+        if run(["git", "-C", tpl, "remote"], check=False).stdout.strip():
+            run(["git", "-C", wt, "push", "-u", "origin", branch])
+            pr = run(["gh", "pr", "create", "--head", branch, "--title", f"Learnings from {project}",
+                      "--body", "Approved retro learnings from a project, with project names stripped.\n\n"
+                                "🤖 Generated with [Claude Code](https://claude.com/claude-code)"], cwd=wt, check=False)
+            print(pr.stdout.strip() or pr.stderr.strip())
+        else:
+            print(f"review it with: git -C {tpl} log main..{branch}, then merge it there")
+    finally:
+        if os.path.exists(wt):
+            run(["git", "-C", tpl, "worktree", "remove", "--force", wt], check=False)
+
+
 def main():
     prog = os.environ.get("BPL_PROG", "factory")
     ap = argparse.ArgumentParser(prog=prog)
@@ -178,6 +284,10 @@ def main():
         ap.add_argument("name"); ap.add_argument("--kind", required=True, choices=["web", "go", "python", "terraform"])
         ap.add_argument("--owner"); ap.add_argument("--github", action="store_true")
         add_repo(ap.parse_args())
+    elif prog == "update-factory":
+        update_factory(ap.parse_args())
+    elif prog == "sync-learnings":
+        sync_learnings(ap.parse_args())
     else:
         die("run through bin/new-project, bin/add-repo, bin/update-factory or bin/sync-learnings", 2)
 

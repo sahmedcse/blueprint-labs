@@ -61,3 +61,31 @@ def subjects_sha(template):
 def test_add_repo_refuses_in_template(template):
     r = sh(str(template / "bin" / "add-repo"), "x-web", "--kind", "web", check=False)
     assert r.returncode == 1 and "not in the template itself" in r.stderr
+
+
+def test_update_and_sync_learnings(template, tmp_path):
+    sh(str(template / "bin" / "new-project"), "acme", "--dir", str(tmp_path))
+    proj = tmp_path / "acme"
+    # The template improves: a principle changes and a lesson lands.
+    (template / "principles" / "PRINCIPLES.md").write_text((template / "principles" / "PRINCIPLES.md").read_text() + "\n12. New rule.\n")
+    lf = template / "principles" / "learnings" / "architect.md"
+    lf.write_text(lf.read_text() + "- Template lesson.\n  source: elsewhere\n")
+    commit_all(template, "feat: improve")
+    # The project learned something of its own meanwhile.
+    pl = proj / "principles" / "learnings" / "ux-designer.md"
+    pl.write_text(pl.read_text() + "- In acme, show empty states large.\n  source: REQ-0001 notes\n")
+    commit_all(proj, "learn(ux-designer): empty states")
+
+    sh(str(proj / "bin" / "update-factory"))
+    assert "12. New rule." in (proj / "principles" / "PRINCIPLES.md").read_text()
+    assert "Template lesson." in (proj / "principles" / "learnings" / "architect.md").read_text()
+    assert "show empty states large" in pl.read_text()
+    s = subjects(proj)
+    assert any(x.startswith("chore(factory): update principles") for x in s)
+    assert any(x.startswith("chore(factory): merge template learnings") for x in s)
+
+    out = sh(str(proj / "bin" / "sync-learnings")).stdout
+    branch = [l for l in out.splitlines() if l.startswith("branch ")][0].split()[1]
+    shared = sh("git", "-C", str(template), "show", f"{branch}:principles/learnings/ux-designer.md").stdout
+    assert "In <project>, show empty states large." in shared
+    assert "Template lesson" not in sh("git", "-C", str(template), "diff", f"main..{branch}").stdout

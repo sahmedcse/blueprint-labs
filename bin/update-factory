@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# See bin/factory.py.
+set -euo pipefail
+BPL_PROG=update-factory exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/factory.py" "$@"
