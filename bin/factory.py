@@ -35,7 +35,7 @@ FACTORY_AREAS = [(".claude", "agents, loops, commands, hooks and settings"), ("s
                  ("bin", "project tools"), ("principles/PRINCIPLES.md", "principles"),
                  ("principles/DEVELOPER.md", "developer rules")]
 TEXT_EXT = {".md", ".json", ".yaml", ".yml", ".toml", ".go", ".mod", ".py", ".ts", ".tsx", ".js", ".mjs",
-            ".css", ".html", ".tf", ".hcl", ".example", ".sql", ".txt", ".cfg", ".ini", ""}
+            ".css", ".html", ".tf", ".hcl", ".example", ".sql", ".txt", ".cfg", ".ini", ".lock", ".sh", ".env", ""}
 
 
 def die(msg, code=1):
