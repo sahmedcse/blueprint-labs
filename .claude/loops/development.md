@@ -64,8 +64,10 @@ Greater than 0 → back to step 2 for that ticket (the brief carries the finding
 ## 6. Open the PR
 1. `scripts/verify-gate.sh <REQ> $T` fails if the tree changed after its gate passed. If so,
    re-gate.
-2. `scripts/contract-check.sh` checks every repo against `contracts/`. If it reports a mismatch in
-   a repo outside this ticket, **stop and ask the user**.
+2. `scripts/contract-check.sh --repo <ticket repo>=$WT`. A `FAIL` means this ticket's repo builds
+   against a stale contract. Send it back to the developer as a blocking finding. `WARN` lines
+   are other repos that haven't caught up yet. They're fine when a ticket for that work exists.
+   If none does, **stop and ask the user**.
 3. Run `git -C $WT status --porcelain`. Commit anything left with a conventional message. Don't
    squash or amend.
 4. `git -C $WT push -u origin <branch>`
