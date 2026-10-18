@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title><link rel="stylesheet" href="/_review/templates/base.css">
+<style>
+.choice{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.choice h3{margin:0 0 8px;font-size:15px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.opt.pick{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.opt b{display:block;margin-bottom:4px}.opt .pick-tag{font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase}
+.opt ul{margin:4px 0 0;padding-left:18px;font-size:14px}.pro::marker{content:"+ ";color:var(--good)}.con::marker{content:"− ";color:var(--bad)}
+.slices a{display:block;text-decoration:none;color:inherit}
+</style></head>
+<body><div class="page">
+<!-- The lead PM's page. The user reads THIS page and approves the direction. Approving it also
+     approves every PRD slice still pending. Keep it to the decisions that matter, about 2-5
+     choices, and link each slice. Replace every {{...}}. -->
+<div class="kicker">product · {{REQ}} · owner product-manager (lead)</div>
+<h1>{{PRODUCT_NAME}}: product overview</h1>
+<p class="lede">{{TWO_SENTENCES_WHAT_WE_ARE_BUILDING_AND_FOR_WHOM}}</p>
+<div class="decision"><b>Decision to approve</b>{{THE_DIRECTION_IN_ONE_SENTENCE}}</div>
+
+<h2>Key choices</h2>
+<!-- One .choice per real product decision. Mark the recommended option with class="opt pick". -->
+<div class="choice"><h3>{{CHOICE_QUESTION}}</h3><div class="opts">
+  <div class="opt pick"><span class="pick-tag">Recommended</span><b>{{OPTION_A}}</b>
+    <ul><li class="pro">{{PRO}}</li><li class="con">{{CON}}</li></ul></div>
+  <div class="opt"><b>{{OPTION_B}}</b><ul><li class="pro">{{PRO}}</li><li class="con">{{CON}}</li></ul></div>
+</div><p class="muted">{{WHY_THE_RECOMMENDATION_ONE_LINE}}</p></div>
+
+<h2>PRD slices</h2>
+<div class="grid slices">
+  <a class="card" href="/a/product/{{SLICE_KEY}}.html"><h3>{{SLICE_TITLE}}</h3><p class="muted">{{SLICE_ONE_LINE}}</p></a>
+</div>
+
+<h2>Out of scope for v1</h2>
+<ul>{{BULLETS}}</ul>
+<div class="unsure"><b>Unsure about</b><ul>{{OPEN_QUESTIONS_OR_REMOVE_THIS_BLOCK}}</ul></div>
+</div></body></html>
