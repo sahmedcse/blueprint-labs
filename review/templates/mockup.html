@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title><link rel="stylesheet" href="/_review/templates/base.css">
+<style>
+/* Screen styles go here. Use the web repo's real theme tokens when the repo exists. */
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:12px 0}
+.frame .bar{padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.frame .screen{padding:20px}
+.states{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+</style></head>
+<body><div class="page">
+<!-- One screen per artifact. Show the main state large, then loading, empty and error states
+     small. Use real copy, not lorem ipsum. Mark reused components with class="tag". -->
+<div class="kicker">design · {{REQ}} · owner ux-designer</div>
+<h1>{{SCREEN_NAME}}</h1>
+<p class="lede">{{WHO_IS_HERE_AND_WHAT_THEY_WANT}}</p>
+<div class="frame"><div class="bar">{{ROUTE}} · desktop</div><div class="screen">
+{{MAIN_STATE_MARKUP}}
+</div></div>
+<h2>Other states</h2>
+<div class="states">
+  <div class="frame"><div class="bar">loading</div><div class="screen">{{LOADING}}</div></div>
+  <div class="frame"><div class="bar">empty</div><div class="screen">{{EMPTY}}</div></div>
+  <div class="frame"><div class="bar">error</div><div class="screen">{{ERROR}}</div></div>
+</div>
+<div class="unsure"><b>Unsure about</b><ul>{{OPEN_QUESTIONS_OR_REMOVE_THIS_BLOCK}}</ul></div>
+</div></body></html>

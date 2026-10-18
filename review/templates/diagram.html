@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title><link rel="stylesheet" href="/_review/templates/base.css"></head>
+<body><div class="page">
+<!-- One diagram = one decision: a C4 container view, one ERD per bounded context, one sequence,
+     or one infra topology. Replace every {{...}}. Keep the Mermaid source readable; the user
+     pins notes on its nodes. -->
+<div class="kicker">{{LOOP}} · {{REQ}} · owner {{OWNER}}</div>
+<h1>{{TITLE}}</h1>
+<p class="lede">{{ONE_SENTENCE_WHAT_THIS_SHOWS}}</p>
+<div class="decision"><b>Decision to approve</b>{{THE_ONE_THING_YOU_ARE_ASKING_TO_APPROVE}}</div>
+<div class="diagram"><pre class="mermaid">
+{{MERMAID_SOURCE}}
+</pre></div>
+<h2>Why this shape</h2>
+<ul>{{2_TO_4_BULLETS}}</ul>
+<div class="unsure"><b>Unsure about</b><ul>{{OPEN_QUESTIONS_OR_REMOVE_THIS_BLOCK}}</ul></div>
+</div>
+<script src="/_review/vendor/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'neutral'});</script>
+</body></html>

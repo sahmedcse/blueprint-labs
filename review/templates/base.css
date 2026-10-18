@@ -1,0 +1,24 @@
+/* Shared look for every review artifact. Link it as /_review/templates/base.css. */
+:root{--bg:#f7f7f5;--panel:#fff;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--accent:#2f6fde;--chip:#efefea;
+  --good:#15803d;--warn:#b7791f;--bad:#b91c1c}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--panel:#1d1d1b;--ink:#ecece8;--muted:#a3a39c;--line:#33332f;
+  --accent:#7aa7ff;--chip:#2a2a27;--good:#4ade80;--warn:#e0a43a;--bad:#f87171}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,sans-serif}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px 120px}
+.kicker{font:600 12px system-ui;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+h1{font-size:24px;margin:4px 0 6px}h2{font-size:17px;margin:28px 0 10px}
+.lede{color:var(--muted);max-width:70ch;margin:0 0 18px}
+.decision{border-left:4px solid var(--accent);background:var(--panel);padding:12px 16px;border-radius:8px;margin:16px 0}
+.decision b{display:block;font-size:12px;text-transform:uppercase;color:var(--accent);letter-spacing:.05em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h3{margin:0 0 6px;font-size:15px}
+.diagram{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:6px;background:var(--chip);margin:0 4px 4px 0}
+.muted{color:var(--muted)}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.unsure{border:1px dashed var(--warn);border-radius:8px;padding:10px 14px;margin:16px 0}
+.unsure b{color:var(--warn)}
+table{border-collapse:collapse;width:100%;background:var(--panel);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px}
+th{font-size:12px;text-transform:uppercase;color:var(--muted)}
