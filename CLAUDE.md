@@ -24,6 +24,21 @@ See where things stand with `/blueprint-status`.
 | `conventions/` | Binding stack rules for each kind of repo. |
 | `skeletons/` | Baseline code for new product repos (`bin/add-repo`). |
 
+## Scripts (the only way state changes)
+
+| Script | Does |
+|---|---|
+| `scripts/request.sh new\|status\|list` | Opens requests and rebuilds their overall status (`--sync` closes merged tickets). |
+| `scripts/ticket.sh new\|move\|list\|show\|ready-set\|validate\|breakdown` | Tickets and the PM's breakdown. Every move is logged, journaled and committed. |
+| `review/review.sh register\|serve\|wait\|notes\|list` | Review pages: register an artifact, serve the hub, wait for decisions, read notes. |
+| `scripts/worktree.sh`, `iter.sh`, `brief.sh`, `gate.sh`, `verify-gate.sh`, `merge-review.sh`, `pr-body.sh` | The per-ticket development loop. |
+| `scripts/adr.sh`, `contract-check.sh` | File approved ADRs and contracts, and check repos against the contracts. |
+| `scripts/learn.sh apply` | Apply an approved retro to `principles/`. |
+| `scripts/commit-check.sh` | Small, Conventional Commits. The gate and CI run it. |
+| `bin/new-project`, `add-repo`, `update-factory`, `sync-learnings`, `demo` | Project lifecycle. `bin/demo` lets you try the hub with sample data. |
+
+`make test` runs every factory test, and `make commits` audits this repo's own history.
+
 ## The fixed stack (no alternatives without an ADR)
 
 - **Web**: Next.js (App Router) + TypeScript strict + Tailwind + shadcn/ui. TanStack Query for

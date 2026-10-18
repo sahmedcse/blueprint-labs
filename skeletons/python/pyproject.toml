@@ -1,0 +1,54 @@
+[project]
+name = "__NAME__"
+version = "0.1.0"
+description = "__NAME__ service"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic>=1.16",
+    "asyncpg>=0.30",
+    "fastapi>=0.115",
+    "pydantic>=2.11",
+    "pydantic-settings>=2.10",
+    "sqlalchemy[asyncio]>=2.0.40",
+    "uvicorn[standard]>=0.35",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28",
+    "mypy>=1.17",
+    "pytest>=8.4",
+    "pytest-asyncio>=1.1",
+    "ruff>=0.12",
+]
+
+[build-system]
+requires = ["uv_build>=0.10,<0.11"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "__PKG__"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "N", "SIM", "ASYNC", "RUF", "PT", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+# Plain asserts are how pytest checks things.
+"tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src", "tests", "migrations"]
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = ["integration: needs a real Postgres via DATABASE_URL"]

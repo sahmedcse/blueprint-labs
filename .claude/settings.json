@@ -1,0 +1,95 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "allow": [
+      "Bash(scripts/request.sh:*)",
+      "Bash(scripts/ticket.sh:*)",
+      "Bash(scripts/worktree.sh:*)",
+      "Bash(scripts/iter.sh:*)",
+      "Bash(scripts/brief.sh:*)",
+      "Bash(scripts/gate.sh:*)",
+      "Bash(scripts/verify-gate.sh:*)",
+      "Bash(scripts/merge-review.sh:*)",
+      "Bash(scripts/pr-body.sh:*)",
+      "Bash(scripts/contract-check.sh:*)",
+      "Bash(scripts/commit-check.sh:*)",
+      "Bash(scripts/adr.sh:*)",
+      "Bash(scripts/learn.sh:*)",
+      "Bash(review/review.sh:*)",
+      "Bash(open http://127.0.0.1:*)",
+      "Bash(git -C .worktrees/:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git show:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git branch --list:*)",
+      "Bash(git fetch:*)",
+      "Bash(git worktree list:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(jq:*)",
+      "Bash(rg:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(sed -n:*)",
+      "Bash(shasum:*)",
+      "Bash(date:*)",
+      "Bash(mkdir -p .runs/:*)",
+      "Edit(/.runs/**)",
+      "Write(/.runs/**)",
+      "Edit(/.worktrees/**)",
+      "Write(/.worktrees/**)",
+      "Edit(/requests/*/request.md)"
+    ],
+    "deny": [
+      "Edit(/tickets/**)",
+      "Write(/tickets/**)",
+      "Edit(/decisions/journal.md)",
+      "Write(/decisions/journal.md)",
+      "Read(/**/.env)",
+      "Read(/**/.env.*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git reset:*)",
+      "Bash(git stash:*)",
+      "Bash(git clean:*)",
+      "Bash(git rebase:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git branch -D:*)",
+      "Bash(git worktree remove --force:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr close:*)",
+      "Bash(gh release:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(terraform apply:*)",
+      "Bash(terraform destroy:*)",
+      "Bash(terraform import:*)",
+      "Bash(terraform state:*)",
+      "Bash(docker system prune:*)",
+      "Bash(docker volume rm:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_paths.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

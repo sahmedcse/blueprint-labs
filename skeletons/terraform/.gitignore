@@ -1,0 +1,18 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+# Values belong in code or SSM/Secrets Manager, never in tfvars files.
+*.tfvars
+*.tfvars.json
+# Modules are not roots; only envs/*/.terraform.lock.hcl is committed.
+modules/**/.terraform.lock.hcl
+.DS_Store

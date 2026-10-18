@@ -1,0 +1,6 @@
+# Copy to backend.hcl and fill in. It holds no secrets: credentials come from the AWS profile.
+bucket       = "__NAME__-terraform-state"
+key          = "__NAME__/prod/terraform.tfstate"
+region       = "us-east-1"
+encrypt      = true
+use_lockfile = true

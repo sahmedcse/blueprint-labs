@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Try the review loop with no agents: a throwaway project with a sample request, a mockup, an ERD
+# and a ticket breakdown, served on the hub. This terminal plays the master. It prints each
+# decision you make in the browser, and approving the breakdown fills the Board with tickets.
+#
+#   bin/demo            (Ctrl-C to stop; the project lives in a temp dir)
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TMP="$(mktemp -d)"
+"$HERE/bin/new-project" demo --dir "$TMP" >/dev/null
+P="$TMP/demo"
+cd "$P"
+REQ=$(scripts/request.sh new "Todo lists with accounts" --text "people can sign up and keep a todo list")
+mkdir -p ".runs/$REQ/artifacts/design" ".runs/$REQ/artifacts/data-model"
+cp "$HERE/bin/demo-data/todo-list.html" ".runs/$REQ/artifacts/design/todo-list.html"
+cp "$HERE/bin/demo-data/erd-todos.html" ".runs/$REQ/artifacts/data-model/erd-todos.html"
+sed "s/__REQ__/$REQ/" "$HERE/bin/demo-data/breakdown.json" > ".runs/$REQ/breakdown.json"
+scripts/ticket.sh breakdown render "$REQ" >/dev/null
+review/review.sh register "$REQ" design/todo-list --owner ux-designer --title "Todo list screen" >/dev/null
+review/review.sh register "$REQ" data-model/erd-todos --owner data-modeler --title "ERD: accounts and todos" >/dev/null
+review/review.sh register "$REQ" product/breakdown --owner product-manager --title "Ticket breakdown" >/dev/null
+scripts/request.sh status "$REQ" --phase design --loop product=review --loop design=review --loop data-model=review --no-gh >/dev/null
+
+review/review.sh serve "$REQ" > "$TMP/server.log" 2>&1 &
+SERVER=$!
+trap 'kill $SERVER 2>/dev/null; echo; echo "demo stopped. Its trail is in $P (git -C $P log --oneline)"' EXIT
+for _ in $(seq 1 50); do [ -s ".runs/$REQ/review.url" ] && break; sleep 0.1; done
+URL=$(cat ".runs/$REQ/review.url")
+echo "Hub: $URL"
+echo "Open a card, turn on Annotate, click anything and type a note."
+echo "Then press 'Send notes: revise' or 'Approve'. Decisions show up here."
+[ -n "${BPL_NO_OPEN:-}" ] || open "$URL" 2>/dev/null || true
+
+while true; do
+  set +e; LINE=$(review/review.sh wait "$REQ" --interval 0.5); RC=$?; set -e
+  echo "$LINE" | grep -v '^STALE' || true
+  [ "$RC" = 3 ] && { echo "Everything approved. Look at the Board and Timeline tabs. Ctrl-C to stop."; wait $SERVER; }
+  [ "$RC" = 0 ] || { echo "review server stopped"; exit 1; }
+  KEY=$(sed -n 's/.*artifact=\([^ ]*\).*/\1/p' <<<"$LINE" | tail -1)
+  if grep -q 'decision=revise' <<<"$LINE"; then
+    review/review.sh notes "$REQ" "$KEY" | sed 's/^/    /'
+    echo "  (a real run sends these notes to the owning agent. Here the page is re-registered as is.)"
+    sleep 1
+    printf '<!-- revised %s -->\n' "$(date +%s)" >> ".runs/$REQ/artifacts/$KEY.html"
+    review/review.sh register "$REQ" "$KEY" >/dev/null
+  elif [ "$KEY" = product/breakdown ]; then
+    scripts/ticket.sh breakdown import "$REQ" | sed 's/^/    /'
+    scripts/request.sh status "$REQ" --loop product=approved --no-gh >/dev/null
+  fi
+done

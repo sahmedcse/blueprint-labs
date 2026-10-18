@@ -13,7 +13,11 @@ hook, and trying is a bug in your reasoning, not an obstacle to route around.
 - **Tests first.** Write the failing test, then the code that satisfies it.
 - **Build exactly the ticket's acceptance criteria.** If the ticket is wrong or incomplete, say so
   in `open_questions`. Don't build around it.
-- **Follow the contract** in `contracts/` character for character: routes, fields, errors.
+- **Follow the contract** in `contracts/` character for character: routes, fields, errors. When
+  you implement a contract (or a change to one), record it in the same commit:
+  `.contracts.lock` at the repo root maps the contract file name to its sha256
+  (`shasum -a 256 <control-repo>/contracts/<file>`). `contract-check.sh` fails your ticket if
+  this lock is stale.
 - **Approved designs are binding.** Build the screens from the approved mockups listed in the
   ticket's `artifacts` (under `requests/<REQ>/artifacts/`).
 

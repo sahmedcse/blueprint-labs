@@ -1,0 +1,17 @@
+{ "schema": "blueprint.breakdown.v1", "req": "__REQ__",
+  "summary": "People sign up and keep a personal todo list.",
+  "epics": [ { "key": "e1", "title": "Accounts", "goal": "sign up and sign in" },
+             { "key": "e2", "title": "Todos", "goal": "add, complete and delete todos" } ],
+  "tickets": [
+    { "ref": "users-table", "epic": "e1", "title": "Users table and migration", "type": "data", "repo": "demo-api",
+      "owner_agent": "data-modeler", "estimate": "S", "acceptance": ["users(id, email unique, created_at)", "migration rolls back"] },
+    { "ref": "signup-api", "epic": "e1", "title": "Sign-up endpoint", "repo": "demo-api", "owner_agent": "backend-developer",
+      "estimate": "M", "depends_on": ["users-table"], "acceptance": ["POST /v1/users returns 201", "duplicate email returns 409"] },
+    { "ref": "todos-table", "epic": "e2", "title": "Todos table and migration", "type": "data", "repo": "demo-api",
+      "owner_agent": "data-modeler", "estimate": "S", "depends_on": ["users-table"], "acceptance": ["todos(id, user_id fk, title, done)"] },
+    { "ref": "todos-api", "epic": "e2", "title": "Todo CRUD endpoints", "repo": "demo-api", "owner_agent": "backend-developer",
+      "estimate": "M", "depends_on": ["todos-table", "signup-api"], "acceptance": ["list, create, toggle, delete own todos", "other users' todos are 404"] },
+    { "ref": "todos-ui", "epic": "e2", "title": "Todo list screen", "repo": "demo-web", "owner_agent": "frontend-developer",
+      "estimate": "M", "depends_on": ["todos-api"], "acceptance": ["matches design/todo-list", "optimistic toggle"], "artifacts": ["design/todo-list"] }
+  ],
+  "open_questions": ["Should completed todos auto-archive after a week?"] }

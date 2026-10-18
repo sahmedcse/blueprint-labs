@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ERD: todos</title><link rel="stylesheet" href="/_review/templates/base.css"></head>
+<body><div class="page">
+<div class="kicker">data-model · demo · owner data-modeler</div>
+<h1>ERD: accounts and todos</h1>
+<p class="lede">Two new tables in demo-api's database. Each todo belongs to exactly one user.</p>
+<div class="decision"><b>Decision to approve</b>todos.user_id is a foreign key with ON DELETE CASCADE, so deleting a user deletes their todos.</div>
+<div class="diagram"><pre class="mermaid">
+erDiagram
+  users ||--o{ todos : owns
+  users {
+    uuid id PK
+    text email UK
+    timestamptz created_at
+  }
+  todos {
+    uuid id PK
+    uuid user_id FK
+    text title
+    boolean done
+    timestamptz created_at
+  }
+</pre></div>
+<h2>Why this shape</h2>
+<ul><li>No soft delete yet. Nothing in the PRD needs it.</li><li>Index on todos(user_id, created_at) for the list query.</li></ul>
+</div>
+<script src="/_review/vendor/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'neutral'});</script>
+</body></html>
