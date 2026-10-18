@@ -1,0 +1,14 @@
+# Scratch state for runs and worktrees. Requests, tickets and decisions ARE committed.
+.runs/
+.worktrees/
+
+# Product repos are their own git repos, checked out next to this one (see repos.json).
+# bin/add-repo appends one line per repo below this marker.
+# --- product repos ---
+
+.DS_Store
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+.env.*
