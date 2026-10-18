@@ -68,12 +68,11 @@ Greater than 0 → back to step 2 for that ticket (the brief carries the finding
    against a stale contract. Send it back to the developer as a blocking finding. `WARN` lines
    are other repos that haven't caught up yet. They're fine when a ticket for that work exists.
    If none does, **stop and ask the user**.
-3. Run `git -C $WT status --porcelain`. Commit anything left with a conventional message. Don't
-   squash or amend.
-4. `git -C $WT push -u origin <branch>`
-5. `scripts/pr-body.sh <REQ> $T > .runs/<REQ>/tickets/$T/pr.md`
-6. `gh pr create --repo <owner/repo> --base main --head <branch> --title "$T: <title>" --body-file .runs/<REQ>/tickets/$T/pr.md --assignee @me`
-7. `scripts/ticket.sh move $T in_review --why "PR opened" --pr <url>`
+3. `git -C $WT push -u origin <branch>`. The gate already guarantees nothing is left
+   uncommitted. Never squash or amend: the commit series is part of what the user reviews.
+4. `scripts/pr-body.sh <REQ> $T > .runs/<REQ>/tickets/$T/pr.md`
+5. `gh pr create --repo <owner/repo> --base main --head <branch> --title "$T: <title>" --body-file .runs/<REQ>/tickets/$T/pr.md --assignee @me`
+6. `scripts/ticket.sh move $T in_review --why "PR opened" --pr <url>`
 
 PRs open ready for review. **`gh pr merge` is denied to you.** Merging is the user's decision.
 
