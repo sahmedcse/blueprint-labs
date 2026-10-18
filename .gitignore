@@ -12,3 +12,6 @@ __pycache__/
 *.pyc
 .env
 .env.*
+
+# Derived, rebuilt by scripts/request.sh status
+requests/*/status.json
