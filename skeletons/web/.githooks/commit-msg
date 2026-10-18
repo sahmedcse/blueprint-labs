@@ -1,0 +1,30 @@
+#!/bin/sh
+# Reject commit messages whose first line is not a Conventional Commit:
+#   type(scope)!: subject
+# Merge and revert lines that git writes itself are allowed.
+# Enable with: make hooks   (git config core.hooksPath .githooks)
+
+msg_file="$1"
+first_line=$(sed -n '1p' "$msg_file")
+
+case "$first_line" in
+  "Merge "* | "Revert \""*) exit 0 ;;
+esac
+
+types='feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert'
+pattern="^($types)(\([^()[:space:]]+\))?!?: [^[:space:]].*$"
+
+if printf '%s\n' "$first_line" | grep -Eq "$pattern"; then
+  exit 0
+fi
+
+cat >&2 <<EOF
+commit-msg: the first line is not a Conventional Commit.
+
+  got:      $first_line
+  expected: type(scope)?: subject   (add ! before : for a breaking change)
+  types:    feat fix chore docs refactor test perf build ci style revert
+
+Example: feat(auth): add password reset form
+EOF
+exit 1
