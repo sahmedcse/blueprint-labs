@@ -7,6 +7,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,sans-serif}
 .page{max-width:1100px;margin:0 auto;padding:24px 16px 120px}
 .kicker{font:600 12px system-ui;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+a{color:var(--accent)}
 h1{font-size:24px;margin:4px 0 6px}h2{font-size:17px;margin:28px 0 10px}
 .lede{color:var(--muted);max-width:70ch;margin:0 0 18px}
 .decision{border-left:4px solid var(--accent);background:var(--panel);padding:12px 16px;border-radius:8px;margin:16px 0}

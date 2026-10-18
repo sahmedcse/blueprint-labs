@@ -188,9 +188,16 @@ section{display:none}section.on{display:block}
     if (tab === 'board') board();
   }
 
-  $('tabs').addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) show(t.dataset.tab); });
+  $('tabs').addEventListener('click', function (e) {
+    var t = e.target.closest('button');
+    if (t) { show(t.dataset.tab); history.replaceState(null, '', '#' + t.dataset.tab); }
+  });
   $('next').addEventListener('click', goNext);
-  refresh().then(function () { if (location.hash === '#next') { history.replaceState(null, '', '/'); goNext(); } });
+  refresh().then(function () {
+    var h = location.hash.slice(1);
+    if (h === 'next') { history.replaceState(null, '', '/'); goNext(); }
+    else if (['overview', 'reviews', 'board', 'timeline'].indexOf(h) >= 0) show(h);
+  });
   setInterval(refresh, 3000);
 })();
 </script>
