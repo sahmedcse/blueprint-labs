@@ -87,7 +87,8 @@ Route on its single output line only:
   <key>` and send that output **verbatim** to the owning agent, with the artifact path, asking it
   to revise only what the notes ask. When it returns, `review/review.sh register <REQ> <key>` again
   (it bumps the round and notifies the user). Re-arm `wait`.
-- `DECISION … decision=approve`: the script has already filed the artifact and journaled it.
+- `DECISION … decision=approve`: the script has already filed the artifact and journaled it,
+  along with any detail pages listed in `also_approved=`.
   Apply that loop's on-approve step (import tickets, file ADRs, unblock dependent loops), then
   re-arm `wait`.
 - `STALE:` lines: an old tab decided. It was set aside. Keep waiting.

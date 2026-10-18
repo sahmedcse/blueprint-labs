@@ -4,7 +4,7 @@
 developers build against.
 
 1. `scripts/request.sh status <REQ> --loop architecture=running`
-2. Launch `architect` with the REQ, the approved PRD pages, the breakdown, `design.json` if present,
+2. Launch `architect` with the REQ, the approved overview and PRD pages, the breakdown, `design.json` if present,
    and `repos.json`.
 3. Register each `architecture/*` artifact, then set `--loop architecture=review`.
 4. On approve of `architecture/adr-<slug>`: run `scripts/adr.sh file <REQ> <slug>`. It copies

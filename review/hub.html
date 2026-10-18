@@ -29,6 +29,9 @@ a.card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 
 a.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 a.card.c-pending{border-left-color:var(--pending)}a.card.c-revise{border-left-color:var(--revise)}a.card.c-approved{border-left-color:var(--approved)}
 a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
+.kids{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.kid{font-size:13px;padding:4px 6px;border-radius:6px;cursor:pointer}.kid:hover{background:var(--chip)}
+.kid .state{font-size:10px;margin-right:4px}
 .muted{color:var(--muted);font-size:12px}
 .state{font:700 11px system-ui;text-transform:uppercase;letter-spacing:.04em}
 .s-pending{color:var(--pending)}.s-revise{color:var(--revise)}.s-approved,.s-done{color:var(--approved)}.s-blocked{color:var(--blocked)}
@@ -78,7 +81,10 @@ a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 
   function pending() {
-    return Object.keys(state.reviews).filter(function (k) { return state.reviews[k].state === 'pending'; }).sort();
+    // Detail pages (with a parent) are optional reading: approving the parent covers them.
+    return Object.keys(state.reviews).filter(function (k) {
+      return state.reviews[k].state === 'pending' && !state.reviews[k].parent;
+    }).sort();
   }
 
   function overview() {
@@ -104,7 +110,10 @@ a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
   function stat(label, v) { return '<div class="card"><div class="muted">' + label + '</div><div class="stat">' + esc(v) + '</div></div>'; }
 
   function reviews() {
-    var keys = Object.keys(state.reviews).sort(function (a, b) {
+    var keys = Object.keys(state.reviews).filter(function (k) {
+      var r = state.reviews[k];
+      return r.state !== 'withdrawn' && !(r.parent && state.reviews[r.parent]);
+    }).sort(function (a, b) {
       var o = { pending: 0, revise: 1, approved: 2 };
       return (o[state.reviews[a].state] - o[state.reviews[b].state]) || a.localeCompare(b);
     });
@@ -113,12 +122,24 @@ a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
       var hint = r.state === 'revise' ? 'with ' + r.owner + ', revising' : r.state === 'pending' ? 'waiting on you' : 'approved';
       return '<a class="card c-' + esc(r.state) + '" href="/a/' + esc(r.file.replace(/^artifacts\//, '')) + '"><div class="state s-' + esc(r.state) + '">' +
         esc(r.state) + '</div><h3>' + esc(r.title) + '</h3><div class="muted">' + esc(k) + ' · round ' + esc(r.round) +
-        ' · ' + esc(hint) + '</div></a>';
+        ' · ' + esc(hint) + '</div>' + details(k) + '</a>';
     }).join('') + '</div>' : '<p class="empty">Nothing to review yet. Agents are still working.</p>';
     var n = pending().length;
     $('pending-badge').hidden = !n; $('pending-badge').textContent = n;
     $('next').disabled = !n;
     $('next').textContent = n ? 'Review next pending (' + n + ')' : 'Nothing waiting on you';
+  }
+
+  function details(parent) {
+    var kids = Object.keys(state.reviews).filter(function (k) {
+      return state.reviews[k].parent === parent && state.reviews[k].state !== 'withdrawn';
+    }).sort();
+    if (!kids.length) return '';
+    return '<div class="kids">' + kids.map(function (k) {
+      var r = state.reviews[k];
+      return '<span class="kid" data-href="/a/' + esc(r.file.replace(/^artifacts\//, '')) + '"><span class="state s-' +
+        esc(r.state) + '">' + esc(r.state) + '</span> ' + esc(r.title) + '</span>';
+    }).join('') + '</div>';
   }
 
   function board() {
@@ -192,6 +213,7 @@ a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
     Array.prototype.forEach.call(document.querySelectorAll('nav button'), function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
     Array.prototype.forEach.call(document.querySelectorAll('main section'), function (s) { s.classList.toggle('on', s.id === tab); });
     if (tab === 'board') board();
+    try { localStorage.setItem('bpl:hubtab', tab); } catch (e) { /* storage blocked */ }
   }
 
   $('tabs').addEventListener('click', function (e) {
@@ -199,6 +221,11 @@ a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
     if (t) { show(t.dataset.tab); history.replaceState(null, '', '#' + t.dataset.tab); }
   });
   $('next').addEventListener('click', goNext);
+  // A detail link sits inside its parent's card link, so route the click to the detail page.
+  $('reviews').addEventListener('click', function (e) {
+    var kid = e.target.closest('.kid');
+    if (kid) { e.preventDefault(); location.href = kid.dataset.href; }
+  });
   refresh().then(function () {
     var h = location.hash.slice(1);
     if (h === 'next') { history.replaceState(null, '', '/'); goNext(); }

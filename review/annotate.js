@@ -80,6 +80,11 @@
     ' max-height:70vh;display:flex;flex-direction:column;background:#111827;color:#f3f4f6;border:1px solid #374151;',
     ' border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.35);font:13px/1.45 system-ui,-apple-system,sans-serif}',
     '.bpl-panel.min .bpl-body{display:none}',
+    '.bpl-bar{position:fixed;top:0;left:0;right:0;z-index:2147483001;height:40px;display:flex;align-items:center;gap:12px;',
+    ' padding:0 16px;background:#111827;color:#f3f4f6;border-bottom:1px solid #374151;font:13px/1 system-ui,-apple-system,sans-serif}',
+    '.bpl-bar a{color:#f3f4f6;text-decoration:none;font-weight:600;padding:6px 10px;border:1px solid #4b5563;border-radius:7px;white-space:nowrap}',
+    '.bpl-bar a:hover{border-color:#9ca3af}',
+    '.bpl-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d1d5db}',
     '.bpl-head{display:flex;gap:6px;align-items:center;padding:10px 12px;border-bottom:1px solid #374151}',
     '.bpl-head b{flex:1;font-size:13px}',
     '.bpl-btn{background:#1f2937;color:#f3f4f6;border:1px solid #4b5563;border-radius:7px;padding:5px 9px;',
@@ -109,11 +114,23 @@
   ].join('\n');
   document.head.appendChild(css);
 
+  // ---- top bar: always a way back to where you came from -----------------------
+  var backTab = 'reviews';
+  try { backTab = localStorage.getItem('bpl:hubtab') || 'reviews'; } catch (e) { /* storage blocked */ }
+  var bar = document.createElement('div');
+  bar.className = 'bpl-bar';
+  bar.innerHTML = '<a class="bpl-back" href="/#' + backTab + '">← ' + backTab.charAt(0).toUpperCase() + backTab.slice(1) + '</a>' +
+    '<span class="bpl-title"></span><a class="bpl-next" href="/#next">Next pending →</a>';
+  bar.querySelector('.bpl-title').textContent = (CFG.title || ART) + (CFG.round ? ' · round ' + CFG.round : '') +
+    (CFG.owner ? ' · ' + CFG.owner : '');
+  document.body.insertBefore(bar, document.body.firstChild);
+  document.body.style.paddingTop = '44px';
+
   // ---- panel --------------------------------------------------------------------
   var panel = document.createElement('div');
   panel.className = 'bpl-panel';
   panel.innerHTML =
-    '<div class="bpl-head"><a class="bpl-btn" href="/" title="Back to the hub">◂ Hub</a>' +
+    '<div class="bpl-head">' +
     '<b>Notes <span id="bpl-count"></span></b>' +
     '<button class="bpl-btn" id="bpl-toggle" type="button">Annotate</button>' +
     '<button class="bpl-btn" id="bpl-min" type="button" title="Minimise">–</button></div>' +
