@@ -128,3 +128,34 @@ def test_size_warning(root):
     (root / ".runs" / REQ / "artifacts" / "design" / "big.html").write_text(big)
     r = run(root, "register", REQ, "design/big", "--owner", "ux-designer")
     assert "WARN: design/big is large" in r.stderr
+
+
+def test_parent_approval_cascades_to_pending_details(served):
+    root = served
+    art = root / ".runs" / REQ / "artifacts" / "product"
+    art.mkdir(parents=True)
+    for k in ("overview", "prd-a", "prd-b"):
+        (art / f"{k}.html").write_text(f"<html><body>{k}</body></html>")
+    rev = run(root, "register", REQ, "product/overview", "--owner", "product-manager").stdout.strip()
+    rev_a = run(root, "register", REQ, "product/prd-a", "--owner", "prd-writer", "--parent", "product/overview").stdout.strip()
+    run(root, "register", REQ, "product/prd-b", "--owner", "prd-writer", "--parent", "product/overview")
+    run(root, "register", REQ, "design/checkout", "--owner", "ux-designer")
+    # A detail can be revised on its own.
+    post_notes(root, "product/prd-a", rev_a, "revise", ["Scope down"])
+    assert "artifact=product/prd-a" in run(root, "wait", REQ, "--interval", "0.1").stdout
+    post_notes(root, "product/overview", rev, "approve", [])
+    out = run(root, "wait", REQ, "--interval", "0.1").stdout
+    assert "artifact=product/overview" in out and "also_approved=product/prd-b" in out
+    r = reviews(root)
+    assert r["product/prd-b"]["state"] == "approved" and r["product/prd-a"]["state"] == "revise"
+    assert r["design/checkout"]["state"] == "pending"
+    assert (root / "requests" / REQ / "artifacts" / "product" / "prd-b.html").exists()
+    assert "approved with product/overview" in (root / "decisions" / "journal.md").read_text()
+    assert "under product/overview" in run(root, "list", REQ).stdout
+
+
+def test_withdraw(root):
+    run(root, "register", REQ, "design/checkout", "--owner", "ux-designer")
+    run(root, "withdraw", REQ, "design/checkout", "--why", "replaced by a later step")
+    assert reviews(root)["design/checkout"]["state"] == "withdrawn"
+    assert "withdrawn: replaced by a later step" in (root / "decisions" / "journal.md").read_text()

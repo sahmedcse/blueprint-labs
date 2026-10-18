@@ -1,9 +1,12 @@
 """Review gates for one request: you annotate artifacts in the browser, and the agent that owns
 each one gets your notes back. Called through review/review.sh.
 
-    review.sh register <REQ> <key> --owner <agent> --title "<title>"
+    review.sh register <REQ> <key> --owner <agent> --title "<title>" [--parent <key>]
         Register or re-register .runs/<REQ>/artifacts/<key>.html: inject the annotation layer
         and record its revision. Run it again after every revision. It prints the rev.
+        --parent makes it a detail page of another artifact (a PRD under the product overview).
+        Approving the parent approves its pending details. A detail can still be revised alone.
+    review.sh withdraw <REQ> <key> --why "<reason>"   take a card off the hub (it no longer applies)
     review.sh serve <REQ>        start the loopback server (run in the background)
     review.sh wait <REQ>         block until ANY pending artifact is decided (run under Monitor)
     review.sh notes <REQ> <key>  print that artifact's notes verbatim, for its owning agent
@@ -127,6 +130,7 @@ def cmd_register(a):
             "file": f"artifacts/{a.key}.html", "title": a.title or (cur or {}).get("title") or a.key,
             "owner": a.owner or (cur or {}).get("owner"), "loop": a.key.split("/")[0],
             "rev": rev, "state": "pending", "round": entry["round"] + 1,
+            "parent": a.parent or (cur or {}).get("parent"),
             "updated_at": trail.now(),
         })
         if not entry["owner"]:
@@ -135,7 +139,7 @@ def cmd_register(a):
         save_json(p["reviews"], reviews)
 
     cfg = {"req": a.req, "artifact": a.key, "rev": rev, "title": entry["title"],
-           "owner": entry["owner"], "round": entry["round"]}
+           "owner": entry["owner"], "round": entry["round"], "parent": entry.get("parent")}
     block = ("<!-- bpl:begin -->\n<script>window.BPL = %s;</script>\n"
              '<script src="/_review/annotate.js"></script>\n<!-- bpl:end -->\n') % json.dumps(cfg)
     with open(page, "w", encoding="utf-8") as f:
@@ -177,6 +181,8 @@ def record(a, p, key, entry, note):
     texts = [n.get("text", "").strip() for n in note["notes"] if n.get("text", "").strip()]
     summary = "; ".join(f"{i + 1}) {t[:120]}" for i, t in enumerate(texts))
     verb = "approved" if decision == "approve" else f"revise ({len(texts)} notes)"
+    if note.get("via"):
+        verb = f"approved with {note['via']}"
     text = f"{verb}, round {rnd}" + (f": {summary}" if summary else "")
     touched.append(trail.journal(ROOT, "review", f"{a.req} {key}", text))
     trail.commit(ROOT, touched, f"review({a.req}): {key} {verb}, round {rnd}")
@@ -213,10 +219,21 @@ def cmd_wait(a):
                 entry["history"].append({"rev": entry["rev"], "round": entry["round"],
                                          "decision": decision, "notes": len(note["notes"]),
                                          "at": trail.now()})
+                cascaded = []
+                if decision == "approve":
+                    for ck, ce in sorted(reviews["artifacts"].items()):
+                        if ce.get("parent") == key and ce["state"] == "pending":
+                            ce["state"] = "approved"
+                            ce["history"].append({"rev": ce["rev"], "round": ce["round"], "decision": "approve",
+                                                  "via": key, "notes": 0, "at": trail.now()})
+                            cascaded.append((ck, ce))
                 save_json(p["reviews"], reviews)
                 record(a, p, key, entry, note)
+                for ck, ce in cascaded:
+                    record(a, p, ck, ce, {"decision": "approve", "notes": [], "rev": ce["rev"], "via": key})
                 print(f"DECISION artifact={key} owner={entry['owner']} decision={decision} "
-                      f"rev={entry['rev']} round={entry['round']} notes={len(note['notes'])}")
+                      f"rev={entry['rev']} round={entry['round']} notes={len(note['notes'])}"
+                      + (f" also_approved={','.join(k for k, _ in cascaded)}" if cascaded else ""))
                 sys.exit(0)
         time.sleep(a.interval)
         checks += 1
@@ -242,10 +259,25 @@ def cmd_notes(a):
         print("(no notes)")
 
 
+def cmd_withdraw(a):
+    p = paths(a.req)
+    with trail.locked(p["reviews"]):
+        reviews = load_json(p["reviews"], {"artifacts": {}})
+        entry = reviews["artifacts"].get(a.key) or die(f"{a.key} is not registered")
+        entry["state"] = "withdrawn"
+        entry["history"].append({"rev": entry["rev"], "round": entry["round"], "decision": "withdraw",
+                                 "why": a.why, "at": trail.now()})
+        save_json(p["reviews"], reviews)
+    j = trail.journal(ROOT, "review", f"{a.req} {a.key}", f"withdrawn: {a.why}")
+    trail.commit(ROOT, [j], f"review({a.req}): withdraw {a.key}")
+    print(f"{a.key} withdrawn")
+
+
 def cmd_list(a):
     reviews = load_json(paths(a.req)["reviews"], {"artifacts": {}})
     for key, e in sorted(reviews["artifacts"].items()):
-        print(f"{key}\t{e['owner']}\t{e['state']}\tround {e['round']}\t{e['title']}")
+        parent = f"\tunder {e['parent']}" if e.get("parent") else ""
+        print(f"{key}\t{e['owner']}\t{e['state']}\tround {e['round']}\t{e['title']}{parent}")
 
 
 def cmd_serve(a):
@@ -256,7 +288,8 @@ def main():
     ap = argparse.ArgumentParser(prog="review.sh")
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("register"); r.add_argument("req"); r.add_argument("key")
-    r.add_argument("--owner"); r.add_argument("--title")
+    r.add_argument("--owner"); r.add_argument("--title"); r.add_argument("--parent")
+    wd = sub.add_parser("withdraw"); wd.add_argument("req"); wd.add_argument("key"); wd.add_argument("--why", required=True)
     w = sub.add_parser("wait"); w.add_argument("req"); w.add_argument("--interval", type=float, default=1.0)
     n = sub.add_parser("notes"); n.add_argument("req"); n.add_argument("key")
     sub.add_parser("list").add_argument("req")
@@ -264,7 +297,7 @@ def main():
     a = ap.parse_args()
     if not re.match(r"^REQ-\d{4}(-[a-z0-9-]+)?$", a.req):
         die(f"bad request id {a.req!r}: expected REQ-0001-slug")
-    {"register": cmd_register, "wait": cmd_wait, "notes": cmd_notes,
+    {"register": cmd_register, "wait": cmd_wait, "notes": cmd_notes, "withdraw": cmd_withdraw,
      "list": cmd_list, "serve": cmd_serve}[a.cmd](a)
 
 
