@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Gate only: fmt, init -backend=false, validate, tflint. No credentials, no plan, no apply.
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.5
+          terraform_wrapper: false
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.64.0
+      - name: Gate
+        run: make gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # lets tflint --init download plugins without rate limits
