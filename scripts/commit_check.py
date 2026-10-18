@@ -34,7 +34,7 @@ def check_subject(subject):
 
 
 def check_range(repo, base):
-    revs = subprocess.run(["git", "-C", repo, "rev-list", "--reverse", f"{base}..HEAD"],
+    revs = subprocess.run(["git", "-C", repo, "rev-list", "--reverse", "--no-merges", f"{base}..HEAD"],
                           capture_output=True, text=True)
     if revs.returncode:
         print(f"commit-check: bad range {base}..HEAD: {revs.stderr.strip()}", file=sys.stderr)
