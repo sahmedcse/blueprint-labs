@@ -1,0 +1,35 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - noctx
+    - revive
+    - unconvert
+    - wrapcheck
+  settings:
+    wrapcheck:
+      ignore-package-globs:
+        - github.com/__OWNER__/__NAME__/*
+  exclusions:
+    generated: strict
+    rules:
+      # Tests may return errors unwrapped from helpers.
+      - path: _test\.go
+        linters: [wrapcheck]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/__OWNER__/__NAME__

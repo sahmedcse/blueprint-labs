@@ -1,0 +1,24 @@
+#!/bin/sh
+# Rejects commit messages whose first line is not a Conventional Commit.
+# Enable with: git config core.hooksPath .githooks   (or: make hooks)
+
+msg_file="$1"
+first_line=$(grep -v '^#' "$msg_file" | sed -n '/[^[:space:]]/{p;q;}')
+
+case "$first_line" in
+  "Merge "*|"Revert "*) exit 0 ;;
+esac
+
+types='feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert'
+if printf '%s\n' "$first_line" | grep -Eq "^($types)(\([a-z0-9][a-z0-9._/-]*\))?!?: [^[:space:]].*$"; then
+  exit 0
+fi
+
+cat >&2 <<EOF
+commit-msg: first line is not a Conventional Commit:
+  $first_line
+Expected: type(scope)?!?: subject
+  types: feat fix chore docs refactor test perf build ci style revert
+  e.g.   feat(notes): list notes newest first
+EOF
+exit 1
