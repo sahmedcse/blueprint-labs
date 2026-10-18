@@ -147,6 +147,8 @@ def cmd_gate(req, tid, iteration):
                 step("ephemeral-postgres", db_step)
                 if has_target(wt, "migrate"):
                     step("make migrate", lambda: sh(["make", "migrate"], wt, log, env))
+            if state["kind"] == "web" and os.path.exists(os.path.join(wt, "pnpm-lock.yaml")):
+                step("pnpm install", lambda: sh(["pnpm", "install", "--frozen-lockfile", "--prefer-offline"], wt, log, env))
             step("make gate", lambda: sh(["make", "gate"], wt, log, env))
         finally:
             if db:
