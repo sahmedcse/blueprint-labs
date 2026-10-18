@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 import pytest
 
@@ -34,6 +35,22 @@ def run(root, *args, check=True):
     return r
 
 
+@pytest.fixture
+def served(root):
+    proc = subprocess.Popen([str(root / "review" / "review.sh"), "serve", REQ], stdout=subprocess.PIPE, text=True)
+    proc.stdout.readline()
+    yield root
+    proc.terminate()
+    proc.wait()
+
+
+def post_notes(root, key, rev, decision, texts):
+    nf = root / ".runs" / REQ / "notes" / (key + ".json")
+    nf.parent.mkdir(parents=True, exist_ok=True)
+    nf.write_text(json.dumps({"rev": rev, "done": True, "decision": decision,
+                              "notes": [{"label": "Checkout", "target": "Pay", "text": t} for t in texts]}))
+
+
 def reviews(root):
     return json.loads((root / ".runs" / REQ / "reviews.json").read_text())["artifacts"]
 
@@ -51,6 +68,59 @@ def test_register_injects_layer_idempotently(root):
 def test_register_requires_owner_and_file(root):
     assert run(root, "register", REQ, "design/checkout", check=False).returncode == 2
     assert run(root, "register", REQ, "design/missing", "--owner", "x", check=False).returncode == 2
+
+
+def test_wait_reports_server_down(root):
+    run(root, "register", REQ, "design/checkout", "--owner", "ux-designer")
+    r = run(root, "wait", REQ, check=False)
+    assert r.returncode == 1 and r.stdout.startswith("SERVER DOWN")
+
+
+def test_wait_idle_when_nothing_pending(served):
+    r = run(served, "wait", REQ, check=False)
+    assert r.returncode == 3 and r.stdout.startswith("IDLE")
+
+
+def test_revise_then_approve_with_trail(served):
+    root = served
+    rev = run(root, "register", REQ, "design/checkout", "--owner", "ux-designer", "--title", "Checkout").stdout.strip()
+    post_notes(root, "design/checkout", rev, "revise", ["Make Pay bigger"])
+    r = run(root, "wait", REQ, "--interval", "0.1")
+    assert "DECISION artifact=design/checkout owner=ux-designer decision=revise" in r.stdout
+    assert reviews(root)["design/checkout"]["state"] == "revise"
+    notes = run(root, "notes", REQ, "design/checkout").stdout
+    assert '[Checkout] on "Pay": Make Pay bigger' in notes
+
+    # The owner revises; re-registering bumps the round and sets the old notes aside.
+    page = root / ".runs" / REQ / "artifacts" / "design" / "checkout.html"
+    page.write_text(page.read_text().replace("<button>Pay</button>", "<button class=big>Pay</button>"))
+    rev2 = run(root, "register", REQ, "design/checkout").stdout.strip()
+    assert rev2 != rev and reviews(root)["design/checkout"]["round"] == 2
+
+    post_notes(root, "design/checkout", rev2, "approve", [])
+    r = run(root, "wait", REQ, "--interval", "0.1")
+    assert "decision=approve" in r.stdout and "round=2" in r.stdout
+
+    archived = (root / "requests" / REQ / "artifacts" / "design" / "checkout.html").read_text()
+    assert "bpl:begin" not in archived and "big" in archived
+    assert (root / "requests" / REQ / "reviews" / "design" / "checkout" / "round-1.json").exists()
+    journal = (root / "decisions" / "journal.md").read_text()
+    assert "revise (1 notes), round 1: 1) Make Pay bigger" in journal and "approved, round 2" in journal
+    log = subprocess.run(["git", "-C", str(root), "log", "--format=%s"], capture_output=True, text=True).stdout
+    assert log.splitlines() == [f"review({REQ}): design/checkout approved, round 2",
+                                f"review({REQ}): design/checkout revise (1 notes), round 1"]
+
+
+def test_stale_decision_is_set_aside(served):
+    root = served
+    run(root, "register", REQ, "design/checkout", "--owner", "ux-designer")
+    post_notes(root, "design/checkout", "oldrev", "approve", [])
+    proc = subprocess.Popen([str(root / "review" / "review.sh"), "wait", REQ, "--interval", "0.1"],
+                            stdout=subprocess.PIPE, text=True, env={**os.environ, "BPL_NO_NOTIFY": "1"})
+    assert proc.stdout.readline().startswith("STALE: design/checkout")
+    proc.terminate()
+    proc.wait()
+    assert reviews(root)["design/checkout"]["state"] == "pending"
 
 
 def test_size_warning(root):

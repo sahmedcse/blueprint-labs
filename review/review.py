@@ -28,6 +28,8 @@ import re
 import shutil
 import subprocess
 import sys
+import time
+import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts", "lib"))
@@ -146,6 +148,85 @@ def cmd_register(a):
     print(rev)
 
 
+def server_up(p):
+    try:
+        url = open(p["url"]).read().strip()
+    except FileNotFoundError:
+        return False, "no review.url. Did serve start?"
+    try:
+        urllib.request.urlopen(url + "__reviews", timeout=2).read()
+        return True, url
+    except OSError as e:
+        return False, f"{url} not responding ({e})"
+
+
+def record(a, p, key, entry, note):
+    """Write the trail for one decision: journal, notes copy, archived artifact, one commit."""
+    decision, rnd = note["decision"], entry["round"]
+    touched = []
+    kept = os.path.join(p["archive"], "reviews", key, f"round-{rnd}.json")
+    save_json(kept, {**note, "owner": entry["owner"], "round": rnd, "title": entry["title"]})
+    touched.append(kept)
+    if decision == "approve":
+        src = os.path.join(p["artifacts"], key + ".html")
+        dst = os.path.join(p["archive"], "artifacts", key + ".html")
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        with open(dst, "w", encoding="utf-8") as f:
+            f.write(strip_layer(open(src, encoding="utf-8").read()))
+        touched.append(dst)
+    texts = [n.get("text", "").strip() for n in note["notes"] if n.get("text", "").strip()]
+    summary = "; ".join(f"{i + 1}) {t[:120]}" for i, t in enumerate(texts))
+    verb = "approved" if decision == "approve" else f"revise ({len(texts)} notes)"
+    text = f"{verb}, round {rnd}" + (f": {summary}" if summary else "")
+    touched.append(trail.journal(ROOT, "review", f"{a.req} {key}", text))
+    trail.commit(ROOT, touched, f"review({a.req}): {key} {verb}, round {rnd}")
+
+
+def cmd_wait(a):
+    p = paths(a.req)
+    ok, why = server_up(p)
+    if not ok:
+        print(f"SERVER DOWN: {why}")
+        sys.exit(1)
+    checks = 0
+    while True:
+        with trail.locked(p["reviews"]):
+            reviews = load_json(p["reviews"], {"artifacts": {}})
+            pending = {k: e for k, e in reviews["artifacts"].items() if e["state"] == "pending"}
+            if not pending:
+                print("IDLE: no artifacts pending review")
+                sys.exit(3)
+            for key, entry in sorted(pending.items()):
+                nf = os.path.join(p["notes"], key + ".json")
+                note = load_json(nf, None)
+                if not note or note.get("done") is not True:
+                    continue
+                if note.get("rev") != entry["rev"]:
+                    os.replace(nf, os.path.join(p["notes"], f"{key}.stale-{note.get('rev')}.json"))
+                    print(f"STALE: {key} decision from old rev {note.get('rev')} set aside; "
+                          f"current rev is {entry['rev']}", flush=True)
+                    continue
+                decision = note.get("decision")
+                if decision not in ("approve", "revise"):
+                    continue
+                entry["state"] = "approved" if decision == "approve" else "revise"
+                entry["history"].append({"rev": entry["rev"], "round": entry["round"],
+                                         "decision": decision, "notes": len(note["notes"]),
+                                         "at": trail.now()})
+                save_json(p["reviews"], reviews)
+                record(a, p, key, entry, note)
+                print(f"DECISION artifact={key} owner={entry['owner']} decision={decision} "
+                      f"rev={entry['rev']} round={entry['round']} notes={len(note['notes'])}")
+                sys.exit(0)
+        time.sleep(a.interval)
+        checks += 1
+        if checks % 10 == 0:
+            ok, why = server_up(p)
+            if not ok:
+                print(f"SERVER DOWN: {why}")
+                sys.exit(1)
+
+
 def cmd_notes(a):
     p = paths(a.req)
     reviews = load_json(p["reviews"], {"artifacts": {}})
@@ -176,13 +257,14 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("register"); r.add_argument("req"); r.add_argument("key")
     r.add_argument("--owner"); r.add_argument("--title")
+    w = sub.add_parser("wait"); w.add_argument("req"); w.add_argument("--interval", type=float, default=1.0)
     n = sub.add_parser("notes"); n.add_argument("req"); n.add_argument("key")
     sub.add_parser("list").add_argument("req")
     sub.add_parser("serve").add_argument("req")
     a = ap.parse_args()
     if not re.match(r"^REQ-\d{4}(-[a-z0-9-]+)?$", a.req):
         die(f"bad request id {a.req!r}: expected REQ-0001-slug")
-    {"register": cmd_register, "notes": cmd_notes,
+    {"register": cmd_register, "wait": cmd_wait, "notes": cmd_notes,
      "list": cmd_list, "serve": cmd_serve}[a.cmd](a)
 
 
