@@ -1,0 +1,28 @@
+{
+  "rev": "2808bd5cdc",
+  "done": true,
+  "decision": "revise",
+  "saved_at": "2026-10-19T00:20:05.079Z",
+  "notes": [
+    {
+      "label": "1. When a countdown ends and you saw the in-app alert, do you also ge\u2026",
+      "target": "Always emailNever missed, simplest to b\u2026",
+      "text": "I would prefer this option here"
+    },
+    {
+      "label": "2. Can a running countdown be paused?",
+      "target": "Cancel onlyTwo states (running, stopped\u2026",
+      "text": "I want cancel only for now"
+    },
+    {
+      "label": "Out of scope for v1",
+      "target": "Unsure about Is responsive web only acc\u2026",
+      "text": "1. Yes\n2. Ok\n3. Yes"
+    }
+  ],
+  "req": "REQ-0001-to-do-application",
+  "artifact": "product/overview",
+  "owner": "product-manager",
+  "round": 1,
+  "title": "Product overview"
+}
