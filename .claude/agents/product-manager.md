@@ -21,7 +21,7 @@ The master runs you in one of two modes. Your brief says which.
 ## Mode 1: plan (the request is new)
 Write under `.runs/<REQ>/`:
 
-1. **`artifacts/product/overview.html`**, from `review/templates/overview.html`. This is the page
+1. **`artifacts/product/overview.html`**, from `review/templates/summary.html`. This is the page
    the user approves:
    - Two sentences: what we're building and for whom. Then the direction in one sentence.
    - **Key choices**: the 2–5 product decisions that shape everything (for example sign-in
