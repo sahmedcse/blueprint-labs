@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Todo product overview</title><link rel="stylesheet" href="/_review/templates/base.css">
+<style>
+.choice{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.choice h3{margin:0 0 8px;font-size:15px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.opt.pick{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.opt b{display:block;margin-bottom:4px}.opt .pick-tag{font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase}
+.opt ul{margin:4px 0 0;padding-left:18px;font-size:14px}.pro::marker{content:"+ ";color:var(--good)}.con::marker{content:"− ";color:var(--bad)}
+.slices a{display:block;text-decoration:none;color:inherit}
+</style></head>
+<body><div class="page">
+<div class="kicker">product · REQ-0001-to-do-application · owner product-manager (lead)</div>
+<h1>Todo: product overview</h1>
+<p class="lede">A personal to-do app for one person juggling work and home tasks across a phone and a laptop. Each task can be tagged, scanned at a glance, timed with a countdown and reminded by email, and it is the same list on every device.</p>
+<div class="decision"><b>Decision to approve</b>A responsive web app with Google-only sign-in, colored free-form tags that make rows scannable, and per-task countdowns and email reminders that reach you even when the app is closed.</div>
+
+<h2>Already decided</h2>
+<div class="choice"><div class="opts">
+  <div class="opt pick"><span class="pick-tag">Decided</span><b>Timer = a countdown that alerts</b><ul><li>Set a duration, press start, get alerted at zero.</li></ul></div>
+  <div class="opt pick"><span class="pick-tag">Decided</span><b>Reminders = email</b><ul><li>Sent at a chosen time, to your Google email.</li></ul></div>
+  <div class="opt pick"><span class="pick-tag">Decided</span><b>Sign-in = Google only</b><ul><li>One button. No passwords, no profile screen.</li></ul></div>
+  <div class="opt pick"><span class="pick-tag">Decided</span><b>Organizing = free-form tags</b><ul><li>Any number per task, each with a color.</li></ul></div>
+  <div class="opt pick"><span class="pick-tag">Decided</span><b>Countdown end always emails</b><ul><li>Banner and chime in every open tab, plus an email every time.</li></ul></div>
+  <div class="opt pick"><span class="pick-tag">Decided</span><b>Countdowns: cancel only, no pause</b><ul><li>Several tasks can run a countdown at once.</li></ul></div>
+  <div class="opt pick"><span class="pick-tag">Decided</span><b>Responsive web only for v1</b><ul><li>No native apps. A Google account is required.</li></ul></div>
+</div></div>
+
+<h2>Key choices</h2>
+<div class="choice"><h3>1. How does tag color make a row recognizable at a glance?</h3><div class="opts">
+  <div class="opt pick"><span class="pick-tag">Recommended</span><b>Row stripe from the first tag, plus chips</b><ul><li class="pro">One strong color per row, scannable from across the room</li><li class="pro">Reordering tags changes the stripe, so no extra setting</li><li class="con">"First" is implicit; some users won't notice it can be changed</li></ul></div>
+  <div class="opt"><b>Colored chips only</b><ul><li class="pro">No hidden rule, every tag treated equally</li><li class="con">Small chips are hard to scan; a row with 3 colors reads as noise</li></ul></div>
+  <div class="opt"><b>User picks a "main" tag per task</b><ul><li class="pro">Explicit and predictable</li><li class="con">One more control on every task; empty for most tasks</li></ul></div>
+</div><p class="muted">The stripe is what makes rows "identifiable at a glance", and drag-to-reorder gives the control of a main tag without another field.</p></div>
+
+<div class="choice"><h3>2. Does setting a due date add a reminder automatically?</h3><div class="opts">
+  <div class="opt"><b>No, reminders are always added by hand</b><ul><li class="pro">No surprise emails</li><li class="con">Users who set a due date often expect a nudge and won't get one</li></ul></div>
+  <div class="opt pick"><span class="pick-tag">Recommended</span><b>Yes, "1 hour before", easy to remove</b><ul><li class="pro">The common case works with zero extra taps</li><li class="pro">Shown as a normal reminder you can delete</li><li class="con">Some unwanted emails until people learn to remove it</li></ul></div>
+</div><p class="muted">The request says every task should have reminders, and a sensible default delivers that without extra setup.</p></div>
+
+<h2>PRD slices</h2>
+<div class="grid slices">
+  <a class="card" href="/a/product/tasks-at-a-glance.html"><h3>Tasks at a glance</h3><p class="muted">Add tasks, tag them, and scan the list: row layout, tag colors, due chips, views and filters.</p></a>
+  <a class="card" href="/a/product/timers-and-reminders.html"><h3>Timers and reminders</h3><p class="muted">Countdowns (start, cancel, alert) and email reminders, and what reaches you when the app is closed.</p></a>
+  <a class="card" href="/a/product/accounts-and-sync.html"><h3>Accounts and sync</h3><p class="muted">Google sign-in, staying signed in, sign-out, and the same list on every device.</p></a>
+</div>
+<p class="muted">Where slices meet: the row's countdown and reminder icons are placed by <b>Tasks at a glance</b> but defined by <b>Timers and reminders</b>. Live countdown sync across devices belongs to <b>Timers and reminders</b>. The email address reminders go to comes from <b>Accounts and sync</b>.</p>
+
+<h2>Out of scope for v1</h2>
+<ul>
+<li>Native phone apps and offline mode (responsive web only)</li>
+<li>Pausing a countdown (cancel only)</li>
+<li>Use without a Google account</li>
+<li>Push, SMS or browser notifications; email and in-app only</li>
+<li>Sharing tasks or lists with other people</li>
+<li>Recurring tasks, subtasks and attachments</li>
+<li>Any sign-in other than Google</li>
+</ul>
+</div></body></html>

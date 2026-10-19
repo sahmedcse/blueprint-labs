@@ -1,0 +1,12 @@
+{
+  "rev": "2f32e6278c",
+  "done": true,
+  "decision": "approve",
+  "saved_at": "2026-10-19T03:18:38.615Z",
+  "notes": [],
+  "req": "REQ-0001-to-do-application",
+  "artifact": "product/overview",
+  "owner": "product-manager",
+  "round": 2,
+  "title": "Product overview"
+}

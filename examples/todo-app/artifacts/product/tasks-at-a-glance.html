@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tasks at a glance</title><link rel="stylesheet" href="/_review/templates/base.css">
+<style>
+.list{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;max-width:720px}
+.row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);border-left:5px solid transparent;flex-wrap:wrap}
+.row:last-child{border-bottom:0}
+.box{width:16px;height:16px;border:2px solid var(--muted);border-radius:4px;flex:none}
+.ttl{flex:1 1 180px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap}
+.tag i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}
+.due{font-size:12px;font-weight:700;padding:1px 8px;border-radius:6px;background:var(--chip)}
+.due.bad{background:color-mix(in srgb,var(--bad) 14%,transparent)}.due.warn{background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.slot{font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:0 6px;min-width:22px;text-align:center}
+.views{display:flex;gap:6px;margin:0 0 8px;flex-wrap:wrap}
+.views span{font-size:13px;padding:3px 10px;border-radius:999px;background:var(--chip)}.views .on{background:var(--accent);color:#fff}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
+</style></head>
+<body><div class="page">
+<div class="kicker">product · REQ-0001-to-do-application · owner prd-writer</div>
+<h1>Tasks at a glance</h1>
+<p class="lede">For one person keeping work and home tasks in one list, checked many times a day, often on a phone. Today every task looks the same, so they open tasks just to learn what they are, and miss what is late. This slice makes adding a task one step and makes rows tell themselves apart.</p>
+<div class="decision"><b>Decision to approve</b>Add a task by typing a title and pressing Enter. Tasks carry free-form <b>tags</b>, each in one of <b>8 colors</b>. A row shows a stripe in the <b>first tag's color</b>, the title, up to <b>3 tag chips then +N</b>, a <b>due chip</b> (Overdue in red, Today in amber, otherwise the date), and fixed slots for the countdown and reminder icons. Four views, <b>Today, Upcoming, All, Done</b>, each filterable by one tag.</div>
+
+<h2>What the list looks like (Today view, Mon 21 Oct, 11:00)</h2>
+<div class="views"><span class="on">Today 3</span><span>Upcoming 4</span><span>All 9</span><span>Done</span><span class="tag">Filter: any tag ▾</span></div>
+<div class="list">
+ <div class="row" style="border-left-color:#2f6fde"><span class="box"></span><span class="ttl">Send Q3 budget to Priya</span><span class="chips"><span class="tag"><i style="background:#2f6fde"></i>work</span><span class="tag"><i style="background:#b91c1c"></i>urgent</span></span><span class="due bad">Overdue · Fri</span><span class="slot">12:30</span><span class="slot">bell</span></div>
+ <div class="row" style="border-left-color:#b91c1c"><span class="box"></span><span class="ttl">Pay council tax</span><span class="chips"><span class="tag"><i style="background:#b91c1c"></i>urgent</span><span class="tag"><i style="background:#0f766e"></i>money</span></span><span class="due bad">Overdue · 09:00</span><span class="slot"></span><span class="slot">bell</span></div>
+ <div class="row" style="border-left-color:#15803d"><span class="box"></span><span class="ttl">Book boiler service</span><span class="chips"><span class="tag"><i style="background:#15803d"></i>home</span><span class="tag"><i style="background:#b7791f"></i>calls</span></span><span class="due warn">Today 17:00</span><span class="slot"></span><span class="slot">bell</span></div>
+</div>
+<p class="muted">Rows from other views: <b>Renew gym membership</b> (stripe purple; chips health, errands, money, <span class="tag">+1</span>; due <span class="due">Tue 22 Oct</span>) and <b>Call Mum</b> (no tags, so no stripe and no chips; no due chip). Dashed boxes are slots: they keep their place when empty so titles line up. What goes in them is defined by <b>Timers and reminders</b>.</p>
+
+<h2>What "done" looks like for the user</h2>
+<table>
+<tr><th>I do this</th><th>I see this</th></tr>
+<tr><td>Type "Buy printer ink" in the add box, press Enter</td><td>It appears at the top of the list, box cleared and focused for the next one. No date, no tags.</td></tr>
+<tr><td>Click a row (not the checkbox)</td><td>An edit panel: title, due date with optional time, tags in order. Changes save as I go.</td></tr>
+<tr><td>Type "errands" in the tag picker, no such tag yet</td><td>"Create tag errands" option. Pick it and the tag exists, with the next unused color.</td></tr>
+<tr><td>Drag "urgent" above "work" on Send Q3 budget</td><td>The row stripe turns red. Chip order follows tag order.</td></tr>
+<tr><td>Open Manage tags, rename "calls" to "phone", set it to teal</td><td>Every task with that tag updates at once.</td></tr>
+<tr><td>Delete tag "work" (on 12 tasks)</td><td>Confirm: "Delete tag work? Its 12 tasks stay, they just lose this tag." Stripes move to each task's next tag.</td></tr>
+<tr><td>Tick the checkbox on Book boiler service</td><td>Row fades and moves to Done, with "Undo" for 5 seconds. Unticking it in Done moves it back.</td></tr>
+<tr><td>Click the "home" chip on any row</td><td>Filter "home" is on, the current view shows only home tasks, and the counts update. × clears it.</td></tr>
+</table>
+
+<h2>The four views</h2>
+<table>
+<tr><th>View</th><th>Shows</th><th>Order</th><th>When empty</th></tr>
+<tr><td>Today</td><td>Not done, due today or overdue</td><td>Overdue first (oldest first), then by time; date-only tasks after timed ones</td><td>"Nothing due today."</td></tr>
+<tr><td>Upcoming</td><td>Not done, due tomorrow or later</td><td>Grouped by day ("Tue 22 Oct"), by time inside a day</td><td>"Nothing scheduled. Give a task a due date to see it here."</td></tr>
+<tr><td>All</td><td>Every task not done, with or without a date</td><td>By due date, then undated tasks newest first</td><td>"No tasks yet. Type one above and press Enter."</td></tr>
+<tr><td>Done</td><td>Completed tasks</td><td>Most recently completed first; due chip replaced by "Done Sat 19 Oct" in grey</td><td>"Nothing done yet."</td></tr>
+</table>
+
+<h2>Rules and edge cases</h2>
+<ul>
+<li><b>Title</b>: required, trimmed, 1 to 200 characters. Enter on an empty box does nothing. Long titles wrap to two lines then end in "…".</li>
+<li><b>Due chip</b>: date-only tasks are Today all day and Overdue from midnight. Timed tasks turn Overdue the minute the time passes ("Overdue · 09:00" today, "Overdue · Fri" for earlier days). Past dates may be set; the task is simply Overdue. Times use the device's time zone.</li>
+<li><b>Colors</b>: 8, shown with their names in the picker:
+<span class="sw" style="background:#2f6fde"></span>blue <span class="sw" style="background:#15803d"></span>green <span class="sw" style="background:#b91c1c"></span>red <span class="sw" style="background:#b7791f"></span>amber <span class="sw" style="background:#7c3aed"></span>purple <span class="sw" style="background:#0f766e"></span>teal <span class="sw" style="background:#db2777"></span>pink <span class="sw" style="background:#6b6b66"></span>grey.
+8 is about the most a person can tell apart from a narrow stripe; more colors start to look alike, and the chips carry the name anyway. Colors may repeat across tags; new tags take the next color not yet used, then cycle.</li>
+<li><b>Tags</b>: names 1 to 24 characters, unique ignoring case ("Work" and "work" are one tag). Up to 10 per task. Renaming to an existing name is blocked: "You already have a tag called home."</li>
+<li><b>Red and amber</b> on due chips mean time, never a tag. A red tag stripe next to a red Overdue chip is allowed; the chip's word carries the meaning.</li>
+<li><b>Filter</b>: one tag at a time. It stays on when switching views and shows in the view bar until cleared. Deleting the filtered tag clears the filter.</li>
+<li><b>Deleting a task</b>: from the edit panel, with "Undo" for 5 seconds. No confirm dialog.</li>
+</ul>
+
+<h2>Out of scope for this slice</h2>
+<ul>
+<li>How countdowns and reminders behave, look inside their slots, and alert (Timers and reminders).</li>
+<li>Sign-in, account menu and keeping devices in sync (Accounts and sync).</li>
+<li>Search, sorting options, multi-tag filters, bulk edit, manual reordering of rows.</li>
+<li>Recurring tasks, subtasks, notes and attachments (out of v1 per the overview).</li>
+</ul>
+
+<div class="unsure"><b>Unsure about</b><ul>
+<li>Is a cap of 10 tags per task right? Rows show only 3, so 10 is generous; the cap mainly keeps the edit panel usable.</li>
+<li>Should a task added while in the Today view get today's date? Without it, it vanishes from Today the moment you add it. Proposed: yes in Today, no date elsewhere, with a short "Added to All" note when the new task isn't in the current view.</li>
+<li>The stripe rule (first tag wins, reorder to change) is still pending approval on the overview. If it changes, only the stripe and the drag row above change.</li>
+</ul></div>
+</div></body></html>

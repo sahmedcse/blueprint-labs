@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accounts and sync</title><link rel="stylesheet" href="/_review/templates/base.css"></head>
+<body><div class="page">
+<div class="kicker">product · REQ-0001-to-do-application · owner prd-writer</div>
+<h1>Accounts and sync</h1>
+<p class="lede">One person adds "Book dentist" on their phone at the bus stop and wants to see it on their laptop at work, with no password to remember and nothing to set up. This slice covers getting in, staying in, getting out, and the list being the same on every device.</p>
+<div class="decision"><b>Decision to approve</b>One <b>Continue with Google</b> button is the only way in; the first sign-in creates the account from the Google email, with no name or profile screen. A device stays signed in until 30 days without a visit. Every device shows the same tasks, tags, countdowns and reminders, and an open tab catches up within seconds of a change elsewhere. Responsive web only.</div>
+
+<h2>The whole sign-in flow</h2>
+<table><tr><th>Step</th><th>What the user sees</th></tr>
+<tr><td>1. Signed out</td><td>"Todo" · "Your tasks, on every device." · <b>Continue with Google</b> · small print: "We only use your name and email. Reminders are sent to this email."</td></tr>
+<tr><td>2. Google</td><td>Google's own account chooser and consent screen (name and email only)</td></tr>
+<tr><td>3a. First time</td><td>Empty list: "No tasks yet. Add your first one above, like <i>Call Mum at 6pm</i>." with the add field focused</td></tr>
+<tr><td>3b. Returning</td><td>Their Today view, exactly as they left it on any device</td></tr>
+<tr><td>Cancelled</td><td>Back on step 1 with a note: "Sign-in was cancelled. Try again when you're ready."</td></tr>
+<tr><td>Google error / offline</td><td>Step 1 with: "Couldn't reach Google. Check your connection and try again."</td></tr>
+</table>
+
+<h2>What "done" looks like</h2>
+<table><tr><th>Situation</th><th>Result</th></tr>
+<tr><td>New laptop, never used Todo there</td><td>Two taps (Continue with Google, pick account) and the list is there.</td></tr>
+<tr><td>Phone at 8:05: adds "Buy milk", tag <span class="tag">Home</span></td><td>Laptop tab already open: row appears within about 5 seconds, no reload. Laptop tab in the background: updated the moment you switch to it.</td></tr>
+<tr><td>Laptop: marks "Send Q3 report" done</td><td>It leaves Today on the phone too, and its reminders stop (owned by Timers and reminders).</td></tr>
+<tr><td>Laptop: renames tag Work to <span class="tag">Office</span></td><td>Every row on every device shows Office.</td></tr>
+<tr><td>Opens the app after 2 weeks away</td><td>Still signed in; the 30-day clock restarts.</td></tr>
+<tr><td>Opens it after 31 days away</td><td>Step 1, with: "You were signed out after 30 days away. Sign in to pick up where you left off." Tasks are untouched.</td></tr>
+<tr><td>Taps the avatar (top right)</td><td>Account menu: <b>sam.lee@gmail.com</b>, a line "Reminders go to this address", and <b>Sign out</b>.</td></tr>
+</table>
+
+<h2>Rules and edge cases</h2>
+<ul>
+<li><b>One account per Google email.</b> Signing in with a different Google account shows a different, separate list.</li>
+<li><b>Reminder address</b> is the Google email shown in the account menu. It can't be edited in v1; if the Google email changes, the next sign-in updates it.</li>
+<li><b>Sign out</b> signs out this device only, returns to step 1 and leaves nothing of the list visible in the browser. Other devices stay signed in.</li>
+<li><b>Two devices edit the same task at once:</b> the later save wins for that task, and the other device shows the winning version within seconds. No merge prompt.</li>
+<li><b>Lost connection:</b> a bar reads "You're offline. Changes can't be saved until you reconnect." Adding and editing are disabled until it clears; nothing is queued.</li>
+<li><b>Session ended elsewhere</b> (e.g. Google access revoked): the next action returns to step 1 with "Please sign in again." Any unsaved text in the add field is kept.</li>
+<li><b>Phone and laptop</b> get the same views; the layout reflows down to a 360px-wide screen.</li>
+</ul>
+
+<h2>Out of scope for this slice</h2>
+<ul>
+<li>Any sign-in besides Google, a profile or settings page, deleting the account (v1).</li>
+<li>Offline mode and native apps.</li>
+<li>Live countdown time-left across devices (Timers and reminders).</li>
+<li>Row layout, views and tags themselves (Tasks at a glance).</li>
+</ul>
+
+<div class="unsure"><b>Unsure about</b><ul>
+<li><b>"Sign out of all devices"</b> is left out of v1. A lost phone stays signed in until 30 days without a visit, or until access is revoked from the Google account. Is that acceptable?</li>
+<li><b>30 days without a visit</b> keeps a daily user signed in for good while ending forgotten sessions on shared machines. Shorter (7 days) is safer but means more sign-ins. Keep 30?</li>
+<li><b>Later save wins</b> can quietly drop an edit when two devices change the same task within seconds. Rare for one person, but tell us if you'd rather see a conflict prompt.</li>
+<li><b>No offline editing</b> means nothing can be added on a train with no signal. Fine for v1?</li>
+<li>Platform "responsive web only" is still pending your answer on the overview; this page assumes yes.</li>
+</ul></div>
+</div></body></html>

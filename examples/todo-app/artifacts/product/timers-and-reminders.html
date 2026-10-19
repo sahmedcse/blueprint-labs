@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timers and reminders</title><link rel="stylesheet" href="/_review/templates/base.css">
+<style>
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
+.flow span{border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:14px;background:var(--panel)}
+.flow i{font-style:normal;color:var(--muted)}
+.mail{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel);font-size:14px}
+.mail b{display:block}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+td,th{font-size:14px}
+</style></head>
+<body><div class="page">
+<div class="kicker">product · REQ-0001-to-do-application · owner prd-writer</div>
+<h1>Timers and reminders</h1>
+<p class="lede">People forget tasks the moment they switch tabs or close the laptop. Any task can carry a countdown ("give this 25 minutes") and email reminders ("nudge me before it's due"), and the alert reaches the person even when the app is closed. For the same one person on phone and laptop as the overview.</p>
+<div class="decision"><b>Decision to approve</b>One countdown per task (several tasks can run at once) that can be cancelled but not paused; at zero a banner and chime on every open tab, and always an email. Up to 5 email reminders per task, with a removable "1 hour before" added when a due date is set.</div>
+
+<h2>What "done" looks like</h2>
+<div class="cols">
+<div><b>Countdown on "Draft Q3 budget memo"</b>
+<div class="flow"><span>Pick 25 min</span><i>→</i><span>Start · row shows 24:59</span><i>→</i><span>0:00 · banner + chime + email</span></div>
+<p class="muted">Or cancel at any time: the timer clears from the row and nothing is sent.</p>
+<p class="muted">Presets: 5, 15, 25, 45 min, 1 h. Custom: 1 min to 12 h.</p>
+<div class="mail"><b>Banner (every open tab, every device)</b>Time's up: Draft Q3 budget memo &nbsp;[Dismiss] [+5 min]</div>
+</div>
+<div><b>Reminders on "Pay electricity bill", due Fri 24 Oct, 17:00</b>
+<table><tr><th>Reminder</th><th>Sends</th></tr>
+<tr><td>1 hour before <span class="muted">(auto, removable)</span></td><td>Fri 16:00</td></tr>
+<tr><td>1 day before</td><td>Thu 17:00</td></tr>
+<tr><td>Custom</td><td>Wed 09:30</td></tr></table>
+<p class="muted">Presets: at due time, 15 min, 1 hour, 1 day before. Custom: any future date and time.</p>
+</div></div>
+
+<h2>Row icons, sync and email</h2>
+<table><tr><th>On the row</th><th>Means</th></tr>
+<tr><td>⏱ 18:42 (ticking)</td><td>Countdown running, live time left</td></tr>
+<tr><td>⏱ Time's up (pulsing)</td><td>Hit zero, banner not dismissed yet</td></tr>
+<tr><td>🔔 2</td><td>2 reminders still to send; hidden when none are left</td></tr></table>
+<p><b>Across devices:</b> start on the laptop and the phone shows the same time left within 2 seconds; cancel on the phone and it clears on the laptop too. Dismiss the banner anywhere and it closes everywhere (the email has already gone). The device clock never decides: the server's end time does.</p>
+<div class="cols">
+<div class="mail"><b>Subject: Time's up: Draft Q3 budget memo</b>Your 25-minute countdown ended at 14:25. <br>[Open task] &nbsp;[Start another 25 min]</div>
+<div class="mail"><b>Subject: Reminder: Pay electricity bill, due today 17:00</b>Due in 1 hour. Tags: Home, Bills. <br>[Open task] &nbsp;[Mark done]</div>
+</div>
+<p class="muted">Emails go to the Google email from sign-in. Times are in the person's time zone. "Mark done" works without signing in again.</p>
+
+<h2>Rules and edge cases</h2>
+<ul>
+<li><b>Several at once:</b> yes. Each task has at most one countdown, and any number of tasks can run at the same time. Two ending together give one banner each, stacked.</li>
+<li><b>No pause:</b> a running countdown can only be cancelled. Cancelling sends nothing; to continue later, start a new one.</li>
+<li><b>Marking a task done</b> cancels its running countdown silently (no banner, no email) and stops its reminders. Reopening it restores reminders still in the future; the countdown does not come back.</li>
+<li><b>Email at zero:</b> always sent, once, at zero, whether or not the banner is seen or dismissed. "+5 min" starts a new 5-minute countdown, which sends its own email when it ends.</li>
+<li><b>App closed:</b> no banner or chime is possible, so the email is the alert.</li>
+<li><b>Reminders:</b> at most 5 per task, no two at the same minute, never in the past (the save button says "Pick a time after now"). Relative presets need a due date; without one only Custom is offered.</li>
+<li><b>Auto reminder:</b> added the first time a due date is set, unless that time is already past. Removing it is remembered; it is not re-added when the due date changes.</li>
+<li><b>Due date moves:</b> relative reminders move with it; any that would land in the past are dropped, with a note "1 reminder removed: time has passed". Removing the due date removes relative reminders and keeps custom ones.</li>
+<li><b>Deleting a task</b> cancels its countdown and all its reminders.</li>
+<li><b>Chime</b> only plays if the browser allows sound; the banner always shows.</li>
+</ul>
+
+<h2>Out of scope</h2>
+<ul>
+<li>Row layout and where the icons sit (Tasks at a glance); sign-in and the email address itself (Accounts and sync).</li>
+<li>Push, SMS or browser notifications; recurring reminders; snoozing a reminder email.</li>
+<li>Count-up timers, time tracking or reports of time spent.</li>
+</ul>
+
+<div class="unsure"><b>Unsure about</b><ul>
+<li>Is 5 reminders per task enough? Picked to keep the editor short; easy to raise.</li>
+<li>Should "+5 min" exist on the banner, or is Dismiss alone simpler? It is the most common reaction to a focus timer ending.</li>
+<li>Is a 12-hour cap on a custom countdown right? Anything longer is better served by a reminder.</li>
+<li>Should the "Mark done" link in the email work without a sign-in? Convenient, but anyone holding the email can complete the task.</li>
+</ul></div>
+</div></body></html>
