@@ -32,6 +32,7 @@ a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
 .kids{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
 .kid{font-size:13px;padding:4px 6px;border-radius:6px;cursor:pointer}.kid:hover{background:var(--chip)}
 .kid .state{font-size:10px;margin-right:4px}
+.lead{margin-left:6px;padding:1px 7px;border-radius:99px;background:var(--chip);color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0}
 .muted{color:var(--muted);font-size:12px}
 .state{font:700 11px system-ui;text-transform:uppercase;letter-spacing:.04em}
 .s-pending{color:var(--pending)}.s-revise{color:var(--revise)}.s-approved,.s-done{color:var(--approved)}.s-blocked{color:var(--blocked)}
@@ -115,19 +116,28 @@ a.card.c-approved{opacity:.75}a.card.c-approved:hover{opacity:1}
       return r.state !== 'withdrawn' && !(r.parent && state.reviews[r.parent]);
     }).sort(function (a, b) {
       var o = { pending: 0, revise: 1, approved: 2 };
-      return (o[state.reviews[a].state] - o[state.reviews[b].state]) || a.localeCompare(b);
+      // Lead summaries (cards with details) come before standalone cards in the same state.
+      return (o[state.reviews[a].state] - o[state.reviews[b].state]) ||
+        (kidCount(b) > 0) - (kidCount(a) > 0) || a.localeCompare(b);
     });
     $('reviews').innerHTML = keys.length ? '<div class="grid">' + keys.map(function (k) {
       var r = state.reviews[k];
       var hint = r.state === 'revise' ? 'with ' + r.owner + ', revising' : r.state === 'pending' ? 'waiting on you' : 'approved';
       return '<a class="card c-' + esc(r.state) + '" href="/a/' + esc(r.file.replace(/^artifacts\//, '')) + '"><div class="state s-' + esc(r.state) + '">' +
-        esc(r.state) + '</div><h3>' + esc(r.title) + '</h3><div class="muted">' + esc(k) + ' · round ' + esc(r.round) +
+        esc(r.state) + (kidCount(k) ? ' <span class="lead">lead summary · ' + kidCount(k) + ' details</span>' : '') +
+        '</div><h3>' + esc(r.title) + '</h3><div class="muted">' + esc(k) + ' · round ' + esc(r.round) +
         ' · ' + esc(hint) + '</div>' + details(k) + '</a>';
     }).join('') + '</div>' : '<p class="empty">Nothing to review yet. Agents are still working.</p>';
     var n = pending().length;
     $('pending-badge').hidden = !n; $('pending-badge').textContent = n;
     $('next').disabled = !n;
     $('next').textContent = n ? 'Review next pending (' + n + ')' : 'Nothing waiting on you';
+  }
+
+  function kidCount(parent) {
+    return Object.keys(state.reviews).filter(function (k) {
+      return state.reviews[k].parent === parent && state.reviews[k].state !== 'withdrawn';
+    }).length;
   }
 
   function details(parent) {

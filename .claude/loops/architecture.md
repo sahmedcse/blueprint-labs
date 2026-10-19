@@ -1,19 +1,23 @@
 # Architecture loop
 
-**Owner:** architect. **Goal:** approved decisions (C4, sequences, ADRs) and a contract the
-developers build against.
+Follows [the lead pattern](lead-pattern.md). **Lead:** architect. **Details:**
+`architecture/c4-containers`, `seq-<flow>`, `adr-<slug>`. **Summary:** `architecture/summary`.
 
-1. `scripts/request.sh status <REQ> --loop architecture=running`
-2. Launch `architect` with the REQ, the approved overview and PRD pages, the breakdown, `design.json` if present,
-   and `repos.json`.
-3. Register each `architecture/*` artifact, then set `--loop architecture=review`.
-4. On approve of `architecture/adr-<slug>`: run `scripts/adr.sh file <REQ> <slug>`. It copies
-   `.runs/<REQ>/adr/<slug>.md` into `decisions/ADR-NNNN-<slug>.md` and commits it.
-5. When all architecture artifacts are approved: `scripts/adr.sh contracts <REQ>` copies
-   `.runs/<REQ>/contracts/*.yaml` into `contracts/` in one commit, then set
-   `--loop architecture=approved`.
-6. If the architect proposed a **new repo** (ADR approved), run
-   `bin/add-repo <name> --kind <go|python|web|terraform>` before development.
-7. If the architect says the breakdown is wrong, send its note to the PM as a revise of
-   `product/breakdown`, before the import if possible. After the import, use `ticket.sh new` or
-   `move … dropped`, each with a reason.
+**Starts when** `product/overview` is approved. **Inputs:** the approved overview and PRDs,
+`design.json` if present, the data model if it exists yet, `repos.json` and `decisions/`.
+
+Specific to architecture:
+- The lead's summary states the repos, the language per service, the merge order, and each
+  decision with the option it picked. Each ADR is a detail. The contract
+  (`.runs/<REQ>/contracts/*.yaml` plus `index.json`) is linked from the summary.
+- **Give data-model the same naming brief.** When data-model runs in parallel, the architect lead's
+  plan names the core entities and fields first, and the master passes that list to the
+  data-model lead. This stops the two from inventing different names.
+- On approval of `architecture/adr-<slug>` (directly, or via the summary):
+  `scripts/adr.sh file <REQ> <slug>`.
+- When the whole loop is approved: `scripts/adr.sh contracts <REQ>`, then
+  `--loop architecture=approved`.
+- A **new repo** in an approved ADR → `bin/add-repo <name> --kind <go|python|web|terraform>`
+  before development.
+- If the architecture shows the breakdown is wrong, send the finding to the product lead as a
+  revise of `product/breakdown`, before the import if possible.

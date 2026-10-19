@@ -11,7 +11,8 @@ when they want the detail. PRD slices are written by `prd-writer` agents that th
 in parallel from your plan. You coordinate, and you don't write the slices yourself.
 
 ## First, read
-1. `principles/PRINCIPLES.md`, then `principles/learnings/product-manager.md`.
+1. `principles/PRINCIPLES.md`, `principles/LEADS.md` (you are the product loop's lead), then
+   `principles/learnings/product-manager.md`.
 2. `CLAUDE.md`, `repos.json`, `requests/<REQ>/request.md` (including the master's routing) and
    any decisions already journaled for this request (`decisions/journal.md`).
 3. What already exists in the product repos, if any. `Bash` is for reading only.
@@ -21,7 +22,7 @@ The master runs you in one of two modes. Your brief says which.
 ## Mode 1: plan (the request is new)
 Write under `.runs/<REQ>/`:
 
-1. **`artifacts/product/overview.html`**, from `review/templates/overview.html`. This is the page
+1. **`artifacts/product/overview.html`**, from `review/templates/summary.html`. This is the page
    the user approves:
    - Two sentences: what we're building and for whom. Then the direction in one sentence.
    - **Key choices**: the 2–5 product decisions that shape everything (for example sign-in

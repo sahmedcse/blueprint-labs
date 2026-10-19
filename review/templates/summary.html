@@ -12,13 +12,18 @@
 .slices a{display:block;text-decoration:none;color:inherit}
 </style></head>
 <body><div class="page">
-<!-- The lead PM's page. The user reads THIS page and approves the direction. Approving it also
-     approves every PRD slice still pending. Keep it to the decisions that matter, about 2-5
-     choices, and link each slice. Replace every {{...}}. -->
-<div class="kicker">product · {{REQ}} · owner product-manager (lead)</div>
-<h1>{{PRODUCT_NAME}}: product overview</h1>
-<p class="lede">{{TWO_SENTENCES_WHAT_WE_ARE_BUILDING_AND_FOR_WHOM}}</p>
-<div class="decision"><b>Decision to approve</b>{{THE_DIRECTION_IN_ONE_SENTENCE}}</div>
+<!-- A lead's summary (principles/LEADS.md). The user reads THIS page and approves the loop's
+     direction. Approving it also approves every detail page still pending. Lead with your
+     recommendation, keep to the 2-5 choices that matter, and link each detail page.
+     Replace every {{...}}. -->
+<div class="kicker">{{LOOP}} · {{REQ}} · lead {{AGENT}}</div>
+<h1>{{LOOP_TITLE}}: summary</h1>
+<p class="lede">{{TWO_SENTENCES_WHAT_THIS_LOOP_DECIDED_AND_WHY_IT_MATTERS}}</p>
+<div class="decision"><b>Lead's recommendation</b>{{THE_DIRECTION_IN_ONE_SENTENCE}}</div>
+
+<h2>Already decided</h2>
+<!-- Decisions the user (or an approved earlier loop) already made. One line each, with no alternatives. -->
+<ul>{{DECIDED_BULLETS}}</ul>
 
 <h2>Key choices</h2>
 <!-- One .choice per real product decision. Mark the recommended option with class="opt pick". -->
@@ -28,12 +33,14 @@
   <div class="opt"><b>{{OPTION_B}}</b><ul><li class="pro">{{PRO}}</li><li class="con">{{CON}}</li></ul></div>
 </div><p class="muted">{{WHY_THE_RECOMMENDATION_ONE_LINE}}</p></div>
 
-<h2>PRD slices</h2>
+<h2>Details</h2>
+<!-- One card per detail page. The user opens one only when they want depth, so say in one line
+     what it decides. -->
 <div class="grid slices">
-  <a class="card" href="/a/product/{{SLICE_KEY}}.html"><h3>{{SLICE_TITLE}}</h3><p class="muted">{{SLICE_ONE_LINE}}</p></a>
+  <a class="card" href="/a/{{DETAIL_KEY}}.html"><h3>{{DETAIL_TITLE}}</h3><p class="muted">{{DETAIL_ONE_LINE}}</p></a>
 </div>
 
-<h2>Out of scope for v1</h2>
-<ul>{{BULLETS}}</ul>
+<h2>Risks and what I'd watch</h2>
+<ul>{{TOP_2_TO_3_RISKS}}</ul>
 <div class="unsure"><b>Unsure about</b><ul>{{OPEN_QUESTIONS_OR_REMOVE_THIS_BLOCK}}</ul></div>
 </div></body></html>
