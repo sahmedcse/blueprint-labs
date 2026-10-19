@@ -159,3 +159,10 @@ def test_withdraw(root):
     run(root, "withdraw", REQ, "design/checkout", "--why", "replaced by a later step")
     assert reviews(root)["design/checkout"]["state"] == "withdrawn"
     assert "withdrawn: replaced by a later step" in (root / "decisions" / "journal.md").read_text()
+
+
+def test_reparent_unchanged_artifact_keeps_round(root):
+    run(root, "register", REQ, "design/checkout", "--owner", "ux-designer")
+    run(root, "register", REQ, "design/checkout", "--parent", "design/summary")
+    e = reviews(root)["design/checkout"]
+    assert e["parent"] == "design/summary" and e["round"] == 1 and e["state"] == "pending"

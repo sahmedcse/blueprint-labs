@@ -116,7 +116,10 @@ def cmd_register(a):
     with trail.locked(p["reviews"]):
         reviews = load_json(p["reviews"], {"schema": "blueprint.reviews.v1", "req": a.req, "artifacts": {}})
         cur = reviews["artifacts"].get(a.key)
-        if cur and cur["rev"] == rev and cur["state"] != "revise":
+        if cur and cur["rev"] == rev and cur["state"] not in ("revise", "withdrawn"):
+            if a.parent and cur.get("parent") != a.parent:
+                cur["parent"] = a.parent  # unchanged content moved under a lead's summary
+                save_json(p["reviews"], reviews)
             print(rev)  # unchanged; keep its state
             return
         if cur:
