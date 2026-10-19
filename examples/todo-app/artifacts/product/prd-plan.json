@@ -1,0 +1,48 @@
+{
+  "schema": "blueprint.prd-plan.v1",
+  "req": "REQ-0001-to-do-application",
+  "slices": [
+    {
+      "key": "product/tasks-at-a-glance",
+      "title": "Tasks at a glance",
+      "brief": "Outcome: one person can add a task in a single step and tell tasks apart in the list without opening them. Cover adding and editing a task (title, optional due date, tags), creating, renaming, recoloring and deleting free-form tags (deleting a tag keeps its tasks), and the row layout: a stripe in the first tag's color, up to 3 tag chips then +N, a due chip (Overdue in red, Today in amber, otherwise the date), and slots for the countdown and reminder icons. Cover the Today, Upcoming, All and Done views and filtering by a tag. Show real example rows. Use the superseded round-2 draft as raw material. Leave out how countdowns and reminders behave (Timers and reminders owns that) and sign-in or sync (Accounts and sync owns that).",
+      "decided": [
+        "organizing: free-form tags, each with a color",
+        "row color: stripe from the first tag's color plus chips; reordering tags changes the stripe (recommended on the overview, pending approval)"
+      ],
+      "questions_for_writer": [
+        "Is a cap of 10 tags per task reasonable? Put it under Unsure about.",
+        "How many tag colors (the draft used 8)? Pick and note why."
+      ]
+    },
+    {
+      "key": "product/timers-and-reminders",
+      "title": "Timers and reminders",
+      "brief": "Outcome: any task can carry a countdown and email reminders, and the alert reaches the user even when the app is closed. Countdown: set a duration (presets plus custom), start, cancel (no pause in v1); several tasks can run countdowns at once; at zero every open tab shows a banner and chime, and an email is always sent. Reminders: email only, several per task, presets relative to the due date plus custom; setting a due date adds a removable '1 hour before' reminder automatically; nothing is sent for a done task; no reminders in the past. Own the meaning of the countdown and reminder icons on the row, live time-left sync across devices, and the email copy. Leave out the row layout itself (Tasks at a glance) and sign-in (Accounts and sync).",
+      "decided": [
+        "timer: a countdown that alerts",
+        "reminders: email",
+        "countdown end: always email, plus banner and chime in every open tab (user decided)",
+        "countdown: cancel only, no pause in v1 (user decided)",
+        "countdowns: several tasks can run one at the same time (user decided)",
+        "due date auto-adds a removable '1 hour before' reminder (recommended, pending approval)"
+      ],
+      "questions_for_writer": [
+        "What happens to a running countdown when the task is marked done?"
+      ]
+    },
+    {
+      "key": "product/accounts-and-sync",
+      "title": "Accounts and sync",
+      "brief": "Outcome: a person signs in with one tap on any device and sees the same tasks, tags, countdowns and reminders everywhere. Cover the whole Google sign-in flow with real copy (including cancelled sign-in and first-time empty state), staying signed in, the account menu showing the Google email and Sign out, and how fresh the list is when switching devices. The Google email is the address reminders go to. Responsive web only for v1. Use the superseded round-2 draft as raw material. Leave out countdown sync details (Timers and reminders owns that).",
+      "decided": [
+        "sign-in: Google only; people without a Google account can't use v1 (user decided)",
+        "platform: responsive web only for v1 (user decided)"
+      ],
+      "questions_for_writer": [
+        "Is 'sign out of all devices' needed in v1? Draft assumed no; keep it under Unsure about.",
+        "How long does a device stay signed in? Draft used 30 days of inactivity."
+      ]
+    }
+  ]
+}
