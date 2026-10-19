@@ -1,15 +1,17 @@
 # Design loop
 
-**Owner:** ux-designer. **Goal:** every user-visible change approved as a mockup before anyone
-builds it.
+Follows [the lead pattern](lead-pattern.md). **Lead:** ux-designer. **Details:** `design/<screen>`
+(one screen each) and `design/flow`. **Summary:** `design/summary`.
 
-1. `scripts/request.sh status <REQ> --phase design --loop design=running`
-2. Launch `ux-designer` with the REQ, the approved overview and PRD pages (`requests/<REQ>/artifacts/product/`)
-   and `.runs/<REQ>/breakdown.json`.
-3. If `.runs/<REQ>/design.json` has `"ui_required": false`, set `--loop design=skipped` and journal
-   nothing more. Otherwise register each `design/<screen>` (and `design/flow` if present), then set
-   `--loop design=review`.
-4. Revise → notes to the same designer, then re-register. Approved → the screen is filed under
-   `requests/<REQ>/artifacts/design/` automatically.
-5. When every design artifact is approved: `--loop design=approved`. Tickets whose `artifacts`
-   list a design key can't start until that key is approved.
+**Starts when** `product/overview` is approved. **Inputs:** the approved overview and PRDs
+(`requests/<REQ>/artifacts/product/`) and the decisions in the journal.
+
+Specific to design:
+- **Triage first.** If the lead writes `.runs/<REQ>/design.json` with `"ui_required": false`, set
+  `--loop design=skipped`. There's no summary and no review.
+- The summary leads with what makes the product recognizable (for the todo app, "at a
+  glance"). Its choices are design choices: density, color, what each row shows, navigation.
+  It embeds one small key visual (for example a single row), not whole screens.
+- `design.json` (screens, routes, new and reused components, data needs) is the handoff to the
+  architect and the frontend developer. The lead keeps it consistent with the details.
+- Tickets whose `artifacts` list a design key can't start until that key is approved.

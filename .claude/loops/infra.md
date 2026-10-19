@@ -1,14 +1,16 @@
 # Infra loop
 
-**Owner:** infra-engineer. **Goal:** an approved topology and Terraform plan, with the human steps
-spelled out.
+Follows [the lead pattern](lead-pattern.md). **Lead:** infra-engineer. **Details:**
+`infra/topology`, `infra/plan`, plus one page per decision that needs its own (for example
+`infra/hosting`). **Summary:** `infra/summary`.
 
-1. Starts when `architecture/c4-containers` is approved, or immediately for an infra-only request.
-   `scripts/request.sh status <REQ> --loop infra=running`
-2. Launch `infra-engineer` in **design mode** with the REQ, the approved C4 page and `repos.json`.
-3. Register `infra/topology` and `infra/plan`, then set `--loop infra=review`.
-4. Revise → notes to the same agent. When both are approved: `--loop infra=approved`, and add any
-   `human_steps` it returned to the request as blockers until done
-   (`request.sh status <REQ> --blocker "..."`).
-5. Terraform tickets are built in the development loop (`owner_agent: infra-engineer`).
-   **Nobody runs `terraform apply`.**
+**Starts when** `architecture/c4-containers` is approved, or immediately for an infra-only
+request. **Inputs:** the approved C4 and ADRs, `plan.json` and `repos.json`.
+
+Specific to infra:
+- The summary picks the hosting runtime, the networking, the data stores, email and secrets,
+  each with its cost implication, and lists the **human steps** (accounts, domains, OAuth
+  clients, the first apply).
+- When approved: `--loop infra=approved`, and every human step becomes a blocker until it's done:
+  `scripts/request.sh status <REQ> --blocker "..."`.
+- Terraform tickets are built in the development loop. **Nobody runs `terraform apply`.**

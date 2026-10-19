@@ -67,6 +67,11 @@ It prints the URL, also in `.runs/<REQ>/review.url`. Run `open <url>` once. Tell
 
 # Step 3: Run loops, as parallel as their dependencies allow
 
+Every proposal loop follows `.claude/loops/lead-pattern.md`. You launch the lead, then its detail
+writers in parallel, then register the lead's summary with the details under it. The user reads
+leads' summaries. Your own updates to the user follow the same rule: one or two lines per
+summary, never a dump of every artifact.
+
 Dependencies are in `.claude/loops/README.md`. **Launch every loop that can start in a single
 message**, so its agents run concurrently. Record the agent id each owner agent returns in
 `.runs/<REQ>/agents.json` (`{"ux-designer": "<id>", ...}`). Revisions go back to that same agent
