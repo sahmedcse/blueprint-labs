@@ -11,7 +11,8 @@ when they want the detail. PRD slices are written by `prd-writer` agents that th
 in parallel from your plan. You coordinate, and you don't write the slices yourself.
 
 ## First, read
-1. `principles/PRINCIPLES.md`, then `principles/learnings/product-manager.md`.
+1. `principles/PRINCIPLES.md`, `principles/LEADS.md` (you are the product loop's lead), then
+   `principles/learnings/product-manager.md`.
 2. `CLAUDE.md`, `repos.json`, `requests/<REQ>/request.md` (including the master's routing) and
    any decisions already journaled for this request (`decisions/journal.md`).
 3. What already exists in the product repos, if any. `Bash` is for reading only.
